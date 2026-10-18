@@ -85,7 +85,7 @@ HUD 是**绘制在 App 自己的 drawable 里**的，`MTL_HUD_SCALE` 是「drawa
 | **启动并显示 HUD（免重启）** | 通过 CoreDevice 的 `com.apple.coredevice.appservice`，用 `MTL_HUD_ENABLED=1` 直接启动目标 App（等价于 `devicectl process launch --env`），不重启、不改 defaults。**iOS 上优先试这个** |
 | **按 App 开启** | 列出已安装 App → 选中游戏 → 把三个键写进它的 `Library/Preferences/<bundle-id>.plist`（保留该 App 原有 defaults） |
 | **全局域（实验）** | 读写 `.GlobalPreferences.plist`（经典 tweak 路线，对 App Store App 不一定有效） |
-| **HUD 选项** | 在「设置」页调 `MTL_HUD_SCALE`（缩放）、`MTL_HUD_ALIGNMENT`（位置）、`MTL_HUD_ELEMENTS`（显示内容），下次启动生效 |
+| **HUD 选项** | 在「设置」页调 `MTL_HUD_SCALE`（缩放）和 `MTL_HUD_ALIGNMENT`（位置），下次启动生效。`MTL_HUD_ELEMENTS`（显示内容）在这个 iOS 版本上会导致 HUD 只剩一条空背景，已移除 |
 | **诊断** | 设备型号/iOS 版本、上次写入时间、**写后是否重启过**、cfprefsd 当前值 |
 | **cfprefsd 重载探测** | 绕过 cfprefsd 改本 App 自己的 plist 再读回来，判断它是否感知外部修改——决定"强退重开"够不够，还是必须重启 |
 | **一键重启** | 通过 Diagnostics Relay 重启设备（cfprefsd 只在开机时重新读文件） |

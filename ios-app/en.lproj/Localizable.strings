@@ -81,8 +81,7 @@
 "HUD options" = "HUD options";
 "HUD scale" = "HUD scale";
 "Alignment" = "Alignment";
-"Layout" = "Layout";
 "The HUD is drawn at the game's own render resolution, so it scales with the frame and can look soft. A larger scale (0.3–0.5) is easier to read; the game's own resolution setting has the final say." = "The HUD is drawn at the game's own render resolution, so it scales with the frame and can look soft. A larger scale (0.3–0.5) is easier to read; the game's own resolution setting has the final say.";
 "Leave the scale empty to use Apple's default (0.2). Alignment codes: tr/tl/tc/cl/c/cr/bl/bc/br. Changes take effect on the next “Launch with HUD”." = "Leave the scale empty to use Apple's default (0.2). Alignment codes: tr/tl/tc/cl/c/cr/bl/bc/br. Changes take effect on the next “Launch with HUD”.";
 "System default" = "System default";
-"If the HUD collapses into a single horizontal line, the game probably rotated or changed its drawable while launching. Leave these on System default (Apple: 0.2 / topright / Lite) and launch again." = "If the HUD collapses into a single horizontal line, the game probably rotated or changed its drawable while launching. Leave these on System default (Apple: 0.2 / topright / Lite) and launch again.";
+"If the HUD collapses into a single horizontal line, put scale/alignment back on System default and launch again. Overriding Apple's content layout (MTL_HUD_ELEMENTS) is not supported by this iOS build, so that option is not offered." = "If the HUD collapses into a single horizontal line, put scale/alignment back on System default and launch again. Overriding Apple's content layout (MTL_HUD_ELEMENTS) is not supported by this iOS build, so that option is not offered.";

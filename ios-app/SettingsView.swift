@@ -185,7 +185,7 @@ struct SettingsView: View {
             Text("The HUD is drawn at the game's own render resolution, so it scales with the frame and can look soft. A larger scale (0.3–0.5) is easier to read; the game's own resolution setting has the final say.")
                 .font(.caption)
                 .foregroundColor(.secondary)
-            Text("If the HUD collapses into a single horizontal line, the game probably rotated or changed its drawable while launching. Leave these on System default (Apple: 0.2 / topright / Lite) and launch again.")
+            Text("If the HUD collapses into a single horizontal line, put scale/alignment back on System default and launch again. Overriding Apple's content layout (MTL_HUD_ELEMENTS) is not supported by this iOS build, so that option is not offered.")
                 .font(.caption2)
                 .foregroundColor(.orange)
 
@@ -208,19 +208,6 @@ struct SettingsView: View {
                 Spacer()
                 Picker("Alignment", selection: $vm.hudAlignment) {
                     ForEach(["default", "tr", "tl", "tc", "cl", "c", "cr", "bl", "bc", "br"], id: \.self) { value in
-                        Text(LocalizedStringKey(value == "default" ? "System default" : value))
-                    }
-                }
-                .pickerStyle(.menu)
-            }
-
-            HStack {
-                Text("Layout")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-                Spacer()
-                Picker("Layout", selection: $vm.hudElements) {
-                    ForEach(["default", "Lite", "Default", "Rich", "Full"], id: \.self) { value in
                         Text(LocalizedStringKey(value == "default" ? "System default" : value))
                     }
                 }

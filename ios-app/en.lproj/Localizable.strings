@@ -5,7 +5,6 @@
 "Reboot the device?" = "重启设备？";
 "Reboot" = "重启";
 "Cancel" = "取消";
-"cfprefsd caches preferences and only re-reads the files at boot. Without a reboot a written key is not guaranteed to be seen by the target app." = "cfprefsd 会缓存偏好，只有开机时才会重新读取这些文件。不重启就不能保证目标 App 能看到写入的键。";
 "Writes Apple's Metal HUD switch into the target app's defaults (or the global domain)." = "把 Apple 的 Metal HUD 开关写进目标 App 的 defaults（或全局域）。";
 "Last run" = "上次运行";
 "Clear" = "清空";
@@ -34,8 +33,6 @@
 "How to see the HUD in a game" = "如何在游戏里看到 HUD";
 "1. Tap Load installed apps and pick the game." = "1. 点「加载已安装 App」，选中游戏。";
 "2. Tap Enable for app (writes the keys into its defaults)." = "2. 点「为这个 App 开启」（会把键写进它的 defaults）。";
-"3. Reboot — cfprefsd only re-reads files at boot." = "3. 重启设备——cfprefsd 只在开机时重新读取文件。";
-"4. Force-quit the game, then relaunch it." = "4. 把游戏从后台彻底划掉，再重新打开。";
 "Not every app shows the HUD: some games do not render with Metal directly. Try a 3D game known to use Metal (e.g. Wuthering Waves, Call of Duty: Mobile, Bright Memory)." = "并不是所有 App 都会显示 HUD：有些游戏不是直接用 Metal 渲染。可以试已知支持 Metal 的 3D 游戏（例如《鸣潮》《使命召唤手游》《光明记忆》）。";
 "Apply" = "生效";
 "Preferences are on disk, but cfprefsd caches them. Restart the device so every process reads the new values." = "偏好已经写在磁盘上，但 cfprefsd 会缓存它们。重启设备才能让所有进程读到新值。";
@@ -63,3 +60,17 @@
 "Metal HUD enabled" = "Metal HUD 已开启";
 "Metal HUD disabled" = "Metal HUD 已关闭";
 "HUD key not set" = "HUD 键未设置";
+"3. Force-quit the game, then relaunch it." = "3. Force-quit the game, then relaunch it.";
+"4. If it still does not appear, reboot the device — cfprefsd may serve a cached copy." = "4. If it still does not appear, reboot the device — cfprefsd may serve a cached copy.";
+"cfprefsd caches preferences and is not restarted by a respring. A reboot is the only guaranteed way to make it re-read the files." = "cfprefsd caches preferences and is not restarted by a respring. A reboot is the only guaranteed way to make it re-read the files.";
+"Log" = "Log";
+"Settings" = "Settings";
+"visible" = "visible";
+"cached" = "cached";
+"Test cfprefsd reload" = "Test cfprefsd reload";
+"cfprefsd external edit" = "cfprefsd external edit";
+"Respring (SpringBoard restart) does not restart cfprefsd; only a reboot is guaranteed to clear its cache. If the probe says cfprefsd notices external edits, a force-quit and relaunch may be enough for a target app." = "Respring (SpringBoard restart) does not restart cfprefsd; only a reboot is guaranteed to clear its cache. If the probe says cfprefsd notices external edits, a force-quit and relaunch may be enough for a target app.";
+"No log yet." = "No log yet.";
+"About" = "About";
+"Version" = "Version";
+"GitHub repository" = "GitHub repository";

@@ -42,6 +42,21 @@ MetalHudEnabled         # 同上
 
 ---
 
+## 一定要重启吗？注销行不行？
+
+- **注销（respring，即重启 SpringBoard）不会重启 cfprefsd。** cfprefsd 是独立守护进程，
+  随系统启动而不是随 SpringBoard；它才是缓存偏好的那一方，所以注销理论上清不掉缓存。
+- 但 cfprefsd **可能自己会感知外部文件修改**（通过文件变化）。如果会，那么写完偏好后
+  **强制退出目标 App 再打开**就够了，连注销都不需要。
+- 所以本 App 的「诊断」页有一个 **测试 cfprefsd 重载**：它绕过 cfprefsd 直接改本 App 自己的
+  plist，再读回来——
+  - 显示 **能感知**：说明外部修改会被拾取，优先试"强退目标 App 再打开"；
+  - 显示 **有缓存**：说明必须重启设备（注销也不够）。
+- App 里的 **重启设备** 走 Diagnostics Relay，是真正的重启；**没有**注销按钮——
+  注销需要越狱/TrollStore 工具去 `killall SpringBoard`，本 App 的权限做不到。
+
+---
+
 ## 功能
 
 | 功能 | 说明 |
@@ -50,6 +65,7 @@ MetalHudEnabled         # 同上
 | **按 App 开启（推荐）** | 列出已安装 App → 选中游戏 → 把三个键写进它的 `Library/Preferences/<bundle-id>.plist`（保留该 App 原有 defaults） |
 | **全局域（实验）** | 读写 `.GlobalPreferences.plist`（经典 tweak 路线，对 App Store App 不一定有效） |
 | **诊断** | 设备型号/iOS 版本、上次写入时间、**写后是否重启过**、cfprefsd 当前值 |
+| **cfprefsd 重载探测** | 绕过 cfprefsd 改本 App 自己的 plist 再读回来，判断它是否感知外部修改——决定"强退重开"够不够，还是必须重启 |
 | **一键重启** | 通过 Diagnostics Relay 重启设备（cfprefsd 只在开机时重新读文件） |
 
 写完后 App 会做 **SHA-256 回读校验**，确认设备上的文件就是写入的内容。
@@ -62,7 +78,10 @@ MetalHudEnabled         # 同上
 MetalUHD-iOS/
 ├── ios-app/                      SwiftUI App（约 2400 行）
 │   ├── MetalUHDApp.swift         App 入口 / AppDelegate / ALGetGrappaToken 硬引用
-│   ├── ContentView.swift         界面（自检 / 按 App / 全局 / 诊断 / 配对）
+│   ├── ContentView.swift         底栏：HUD / 日志 / 设置
+│   ├── HUDHomeView.swift         HUD 页（自检 / 按 App / 全局 / 诊断）
+│   ├── LogView.swift             日志页
+│   ├── SettingsView.swift        设置页（配对 / 隧道 / 关于）
 │   ├── HUDViewModel.swift        状态机、串行队列、App 列表、诊断
 │   ├── HUDEngine.swift           全局 + 按 App 的读 → 备份 → 改 plist → 写 → 回读校验
 │   ├── MetalHUDTest.swift        自带 Metal 渲染器 + 本进程 HUD 开关
@@ -145,10 +164,13 @@ IPA 是刻意**不签名**的，用你平时签 AirliftSilence 的工具（AltSt
 3. 点 **加载已安装 App**，搜索并选中游戏。
 4. 点 **为这个 App 开启**。等它跑完：一次运行要几十秒（读 + 写 + 回读校验）。
 5. 看结果：`write verified`（SHA-256 一致）。
-6. 点 **重启设备**（或手动重启）。cfprefsd 只在开机时重新读文件。
-7. 把游戏从后台彻底划掉，再重新打开 —— HUD 应出现在右上角。
+6. **先把游戏从后台彻底划掉，再打开**，看有没有 HUD。
+7. 如果还没有，先去「诊断」点 **测试 cfprefsd 重载**：
+   - **能感知** → 再强退重开一次（理论上不需要重启）；
+   - **有缓存** → 点 **重启设备**（或手动重启），cfprefsd 只在开机时重新读文件。
+8. 重启后再次强退并打开游戏 —— HUD 应出现在右上角。
 
-想关掉：选中同一个 App → **关闭**，同样需要重启 + 重开 App。
+想关掉：选中同一个 App → **关闭**，同样按上面的顺序验证；缓存状态下需要重启。
 
 ---
 
@@ -174,6 +196,7 @@ IPA 是刻意**不签名**的，用你平时签 AirliftSilence 的工具（AltSt
 | 自检页也没有 HUD | 设备/系统不支持 HUD（或该 iOS 版本移除了），与写入无关 |
 | 按 App 写入成功、重启后游戏仍无 HUD | 先 **Check** 该 App 确认三个键为 true；再确认游戏确实是 Metal 渲染（换 3D 游戏试）；最后看是不是该 App 的偏好文件被 cfprefsd 覆盖（重启后重新 Check） |
 | 全局模式 `true` / `cfprefsd: true` 但没 HUD | 已知现象：iOS 上 HUD 不读 global 域。改用按 App 模式 |
+| 注销之后还是不生效 | 正常：respring 不重启 cfprefsd。看诊断里的 cfprefsd 探测，必要时重启设备 |
 | 想确认 key 是否真的写进去了 | 点 Check；诊断卡片会显示上次写入时间和"写后是否重启" |
 
 ---

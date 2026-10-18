@@ -91,6 +91,13 @@ struct InstalledApp: Codable, Identifiable, Hashable, Sendable {
     }
 }
 
+/// Result of the cfprefsd external-edit probe.
+struct ReloadProbe: Sendable {
+    /// True when cfprefsd returned the value written behind its back.
+    let externalEditVisible: Bool
+    let detail: String
+}
+
 // MARK: - Log sink
 
 /// Thread-safe sink for FFI log lines. Rust calls the log callback from
@@ -593,6 +600,67 @@ enum HUDEngine {
         if let number = raw as? NSNumber { return number.boolValue }
         if let string = raw as? String { return (string as NSString).boolValue }
         return nil
+    }
+
+    /// Writes directly to this app's own preferences file (bypassing
+    /// cfprefsd), then asks cfprefsd for the value again.
+    ///
+    /// If the value comes back, cfprefsd notices external edits and a target
+    /// app that is force-quit and relaunched can pick up a written preference
+    /// **without a reboot**. If it does not, a reboot (not a respring) is the
+    /// only guaranteed way to clear the cache.
+    static func probeCfprefsdReload() -> ReloadProbe {
+        let bundleID = Bundle.main.bundleIdentifier ?? "com.yihoooong.metaluhd"
+        let key = "MetalUHDCacheProbe"
+        let value = UUID().uuidString
+        let fileManager = FileManager.default
+        let prefsDir = fileManager.urls(for: .libraryDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent("Preferences", isDirectory: true)
+        let fileURL = prefsDir.appendingPathComponent("\(bundleID).plist")
+
+        // Flush our own pending defaults, then seed cfprefsd's cache so the
+        // second read cannot succeed just because the domain was never loaded.
+        UserDefaults.standard.synchronize()
+        _ = CFPreferencesCopyValue(key as CFString, bundleID as CFString,
+                                   kCFPreferencesCurrentUser, kCFPreferencesAnyHost)
+
+        var dict: [String: Any] = [:]
+        if let data = try? Data(contentsOf: fileURL),
+           let parsed = try? PropertyListSerialization.propertyList(from: data, options: [], format: nil),
+           let existing = parsed as? [String: Any] {
+            dict = existing
+        }
+        dict[key] = value
+
+        guard let edited = try? PropertyListSerialization.data(fromPropertyList: dict,
+                                                               format: .binary, options: 0) else {
+            return ReloadProbe(externalEditVisible: false, detail: "could not serialise the probe")
+        }
+        do {
+            try fileManager.createDirectory(at: prefsDir, withIntermediateDirectories: true)
+            try edited.write(to: fileURL, options: .atomic)
+        } catch {
+            return ReloadProbe(externalEditVisible: false,
+                               detail: "could not write the probe: \(error.localizedDescription)")
+        }
+
+        let seen = CFPreferencesCopyValue(key as CFString, bundleID as CFString,
+                                          kCFPreferencesCurrentUser, kCFPreferencesAnyHost) as? String
+        let visible = seen == value
+
+        // Leave our own defaults as they were.
+        dict.removeValue(forKey: key)
+        if let clean = try? PropertyListSerialization.data(fromPropertyList: dict,
+                                                           format: .binary, options: 0) {
+            try? clean.write(to: fileURL, options: .atomic)
+        }
+
+        return ReloadProbe(
+            externalEditVisible: visible,
+            detail: visible
+                ? "cfprefsd noticed the external edit"
+                : "cfprefsd served a cached value"
+        )
     }
 
     // MARK: - device I/O

@@ -76,6 +76,7 @@ final class HUDViewModel: ObservableObject {
     // Diagnostics.
     @Published var lastWriteAt: Date? = HUDViewModel.storedLastWrite
     @Published var lastAppTarget: String = ""
+    @Published var reloadProbe: ReloadProbe? = nil
 
     private var drainTimer: Timer?
     /// The last URL handed to `adoptPairingFile`, so a share-sheet open that is
@@ -151,6 +152,14 @@ final class HUDViewModel: ObservableObject {
         let formatter = DateFormatter()
         formatter.dateFormat = "MM-dd HH:mm:ss"
         return formatter.string(from: date)
+    }
+
+    /// Runs the cfprefsd external-edit probe. Cheap: it only touches this
+    /// app's own preferences file, no device session needed.
+    func runReloadProbe() {
+        let probe = HUDEngine.probeCfprefsdReload()
+        reloadProbe = probe
+        append("cfprefsd probe: \(probe.detail)")
     }
 
     private func recordWrite() {

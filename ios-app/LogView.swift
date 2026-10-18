@@ -9,9 +9,13 @@ struct LogView: View {
             List {
                 Section {
                     LabeledContent("Device", value: vm.deviceDescription)
+                        .consistentListSeparator()
                     LabeledContent("Last launch", value: vm.lastLaunchDescription)
+                        .consistentListSeparator()
                     LabeledContent("Pairing", value: vm.pairingReady ? "ready" : "missing")
+                        .consistentListSeparator()
                     LabeledContent("LocalDevVPN", value: vpnDescription)
+                        .consistentListSeparator()
                 } header: {
                     Text("Diagnostics")
                 }

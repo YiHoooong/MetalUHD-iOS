@@ -62,7 +62,11 @@ struct HUDHomeView: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 20)
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 22, style: .continuous)
+                .strokeBorder(Color.primary.opacity(0.05), lineWidth: 0.5)
+        )
     }
 
     private var vpnPill: some View {
@@ -119,10 +123,23 @@ struct HUDHomeView: View {
                     .font(.caption)
                     .foregroundColor(.secondary)
             } else {
-                TextField("Search apps or bundle id", text: $vm.appFilter)
-                    .textFieldStyle(.roundedBorder)
-                    .autocapitalization(.none)
-                    .disableAutocorrection(true)
+                HStack(spacing: 8) {
+                    Image(systemName: "magnifyingglass")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                    TextField("Search apps or bundle id", text: $vm.appFilter)
+                        .textFieldStyle(.plain)
+                        .autocapitalization(.none)
+                        .disableAutocorrection(true)
+                }
+                .padding(.horizontal, 14)
+                .padding(.vertical, 10)
+                .background(.ultraThinMaterial, in: Capsule())
+                .overlay(
+                    Capsule()
+                        .strokeBorder(Color.white.opacity(0.25), lineWidth: 1)
+                )
+                .shadow(color: .black.opacity(0.06), radius: 6, y: 2)
 
                 LazyVGrid(columns: columns, alignment: .leading, spacing: 18) {
                     ForEach(vm.filteredApps) { app in
@@ -150,7 +167,11 @@ struct HUDHomeView: View {
             }
         }
         .padding(14)
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 22, style: .continuous)
+                .strokeBorder(Color.primary.opacity(0.05), lineWidth: 0.5)
+        )
     }
 
     @ViewBuilder

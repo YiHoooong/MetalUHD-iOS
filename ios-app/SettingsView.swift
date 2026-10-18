@@ -77,6 +77,7 @@ struct SettingsView: View {
                 Text(LocalizedStringKey(vm.pairingReady ? "Pairing file ready" : "Pairing required"))
                 Spacer()
             }
+            .consistentListSeparator()
 
             if let pin = pairing.pairingPIN {
                 LabeledContent("PIN", value: pin)
@@ -102,12 +103,14 @@ struct SettingsView: View {
             } label: {
                 Label("Import pairing file", systemImage: "square.and.arrow.down")
             }
+            .consistentListSeparator()
 
             if let url = vm.pairingFileURL {
                 ShareLink(item: url) {
                     Label("Export pairing file", systemImage: "square.and.arrow.up")
                 }
             }
+            .consistentListSeparator()
 
             if LocalDevVPN.isInstalled {
                 Button {
@@ -116,6 +119,7 @@ struct SettingsView: View {
                     Label("Open LocalDevVPN", systemImage: "network")
                 }
             }
+            .consistentListSeparator()
         } header: {
             Text("Pairing")
         } footer: {
@@ -160,6 +164,7 @@ struct SettingsView: View {
             } label: {
                 Label("Open HUD test", systemImage: "play.rectangle")
             }
+            .consistentListSeparator()
         } header: {
             Text("HUD")
         } footer: {

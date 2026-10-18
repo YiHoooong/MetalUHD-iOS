@@ -10,6 +10,7 @@
 "Diagnostics" = "诊断";
 "Done" = "完成";
 "Export pairing file" = "导出配对文件";
+"GitHub repository" = "GitHub repository";
 "HUD" = "HUD";
 "HUD launched" = "HUD 已启动";
 "Import pairing file" = "导入配对文件";
@@ -18,7 +19,7 @@
 "LocalDevVPN" = "LocalDevVPN";
 "LocalDevVPN connected" = "LocalDevVPN 已连接";
 "LocalDevVPN is not running" = "LocalDevVPN 未运行";
-"LocalDevVPN must run in loopback mode. Never enter 127.0.0.1: remotepairingdeviced refuses the control channel and drops into a state where every connection fails until you toggle Developer Mode off and on again." = "LocalDevVPN must run in loopback mode. Never enter 127.0.0.1: remotepairingdeviced refuses the control channel and drops into a state where every connection fails until you toggle Developer Mode off and on again.";
+"LocalDevVPN must run in loopback mode. Never enter 127.0.0.1: remotepairingdeviced refuses the control channel and drops into a state where every connection fails until you toggle Developer Mode off and on again." = "LocalDevVPN 必须运行在回环模式。千万不要填 127.0.0.1：那会让 remotepairingdeviced 拒绝控制通道并进入丢弃状态，之后所有连接都会失败，只能靠关掉再打开开发者模式恢复。";
 "LocalDevVPN offline" = "LocalDevVPN 未连接";
 "Log" = "日志";
 "Metal HUD test" = "金属 HUD 测试";
@@ -30,12 +31,16 @@
 "PIN" = "PIN";
 "Pair first (Settings → pairing) so the app list can be loaded." = "先完成配对（设置 → 配对），才能加载 App 列表。";
 "Pairing" = "配对";
+"Pairing file ready" = "配对文件已就绪";
+"Pairing required" = "需要配对";
 "Pairing…" = "配对中…";
 "Re-check" = "重新检查";
 "Scale" = "缩放";
 "Scale is a fraction of the game's drawable width (Apple default 0.2, minimum 300 px). The HUD follows the game's render resolution, so it can look soft. Alignment codes: tr/tl/tc/cl/c/cr/bl/bc/br." = "Scale is a fraction of the game's drawable width (Apple default 0.2, minimum 300 px). The HUD follows the game's render resolution, so it can look soft. Alignment codes: tr/tl/tc/cl/c/cr/bl/bc/br.";
 "Search apps or bundle id" = "搜索 App 或 bundle id";
 "Settings" = "设置";
+"Start pairing" = "开始配对";
+"System default" = "系统默认";
 "Tap the refresh button to load the installed apps." = "点右上角刷新按钮加载已安装 App。";
 "The exploit needs a pairing file. Pair this iPhone with itself below, or share an existing pairing file into this app." = "逃逸需要配对文件。可以在下面让这台 iPhone 与自身配对，或把现有配对文件分享进这个 App。";
 "Tunnel" = "隧道";

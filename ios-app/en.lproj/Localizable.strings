@@ -10,6 +10,7 @@
 "Diagnostics" = "Diagnostics";
 "Done" = "Done";
 "Export pairing file" = "Export pairing file";
+"GitHub repository" = "GitHub repository";
 "HUD" = "HUD";
 "HUD launched" = "HUD launched";
 "Import pairing file" = "Import pairing file";
@@ -30,12 +31,16 @@
 "PIN" = "PIN";
 "Pair first (Settings → pairing) so the app list can be loaded." = "Pair first (Settings → pairing) so the app list can be loaded.";
 "Pairing" = "Pairing";
+"Pairing file ready" = "Pairing file ready";
+"Pairing required" = "Pairing required";
 "Pairing…" = "Pairing…";
 "Re-check" = "Re-check";
 "Scale" = "Scale";
 "Scale is a fraction of the game's drawable width (Apple default 0.2, minimum 300 px). The HUD follows the game's render resolution, so it can look soft. Alignment codes: tr/tl/tc/cl/c/cr/bl/bc/br." = "Scale is a fraction of the game's drawable width (Apple default 0.2, minimum 300 px). The HUD follows the game's render resolution, so it can look soft. Alignment codes: tr/tl/tc/cl/c/cr/bl/bc/br.";
 "Search apps or bundle id" = "Search apps or bundle id";
 "Settings" = "Settings";
+"Start pairing" = "Start pairing";
+"System default" = "System default";
 "Tap the refresh button to load the installed apps." = "Tap the refresh button to load the installed apps.";
 "The exploit needs a pairing file. Pair this iPhone with itself below, or share an existing pairing file into this app." = "The exploit needs a pairing file. Pair this iPhone with itself below, or share an existing pairing file into this app.";
 "Tunnel" = "Tunnel";

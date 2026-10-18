@@ -1,4 +1,5 @@
 import Foundation
+import SwiftUI
 import UIKit
 import AVFAudio
 import Network
@@ -148,5 +149,16 @@ enum LocalDevVPN {
 
     static func open() {
         UIApplication.shared.open(url)
+    }
+}
+
+// MARK: - List helpers
+
+extension View {
+    /// Aligns a List row's separators with the row leading edge. Rows that
+    /// start with an icon otherwise draw a shorter line than plain text rows,
+    /// which is what made the Settings separators look inconsistent.
+    func consistentListSeparator() -> some View {
+        alignmentGuide(.listRowSeparatorLeading) { _ in 16 }
     }
 }

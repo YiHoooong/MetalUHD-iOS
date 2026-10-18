@@ -2,8 +2,7 @@ import SwiftUI
 import UIKit
 import UniformTypeIdentifiers
 
-/// Everything about pairing, HUD options, the tunnel and the app itself, in a
-/// native iOS grouped-list layout.
+/// Pairing, HUD options, the tunnel and app info, in a native grouped list.
 struct SettingsView: View {
     @ObservedObject private var vm = HUDViewModel.shared
     @ObservedObject private var pairing = PairingController.shared
@@ -67,58 +66,72 @@ struct SettingsView: View {
         }
     }
 
+    /// Every row goes through this so the separator spans the card.
+    @ViewBuilder
+    private func row<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
+        content().cardWidthListSeparator()
+    }
+
     // MARK: pairing
 
     private var pairingSection: some View {
         Section {
-            HStack(spacing: 10) {
-                Image(systemName: vm.pairingReady ? "checkmark.seal.fill" : "person.badge.key")
-                    .foregroundColor(vm.pairingReady ? .green : .orange)
-                Text(LocalizedStringKey(vm.pairingReady ? "Pairing file ready" : "Pairing required"))
-                Spacer()
+            row {
+                HStack(spacing: 10) {
+                    Image(systemName: vm.pairingReady ? "checkmark.seal.fill" : "person.badge.key")
+                        .foregroundColor(vm.pairingReady ? .green : .orange)
+                    Text(LocalizedStringKey(vm.pairingReady ? "Pairing file ready" : "Pairing required"))
+                    Spacer()
+                }
             }
-            .consistentListSeparator()
 
             if let pin = pairing.pairingPIN {
-                LabeledContent("PIN", value: pin)
-                    .font(.system(.body, design: .monospaced).weight(.bold))
-            } else if pairing.running {
-                LabeledContent("Pairing…", value: pairing.pairingStatus)
-            }
-
-            Button {
-                if pairing.running {
-                    pairing.softCancel()
-                } else {
-                    Task { await runPairing() }
+                row {
+                    LabeledContent("PIN", value: pin)
+                        .font(.system(.body, design: .monospaced).weight(.bold))
                 }
-            } label: {
-                Text(LocalizedStringKey(pairing.running ? "Cancel" : "Start pairing"))
+            } else if pairing.running {
+                row { LabeledContent("Pairing…", value: pairing.pairingStatus) }
             }
 
-            Button("Re-check") { vm.refreshPairingState() }
-
-            Button {
-                showImporter = true
-            } label: {
-                Label("Import pairing file", systemImage: "square.and.arrow.down")
+            row {
+                Button {
+                    if pairing.running {
+                        pairing.softCancel()
+                    } else {
+                        Task { await runPairing() }
+                    }
+                } label: {
+                    Text(LocalizedStringKey(pairing.running ? "Cancel" : "Start pairing"))
+                }
             }
-            .consistentListSeparator()
+
+            row { Button("Re-check") { vm.refreshPairingState() } }
+
+            row {
+                Button {
+                    showImporter = true
+                } label: {
+                    Label("Import pairing file", systemImage: "square.and.arrow.down")
+                }
+            }
 
             if let url = vm.pairingFileURL {
-                ShareLink(item: url) {
-                    Label("Export pairing file", systemImage: "square.and.arrow.up")
+                row {
+                    ShareLink(item: url) {
+                        Label("Export pairing file", systemImage: "square.and.arrow.up")
+                    }
                 }
-                .consistentListSeparator()
             }
 
             if LocalDevVPN.isInstalled {
-                Button {
-                    LocalDevVPN.open()
-                } label: {
-                    Label("Open LocalDevVPN", systemImage: "network")
+                row {
+                    Button {
+                        LocalDevVPN.open()
+                    } label: {
+                        Label("Open LocalDevVPN", systemImage: "network")
+                    }
                 }
-                .consistentListSeparator()
             }
         } header: {
             Text("Pairing")
@@ -144,27 +157,32 @@ struct SettingsView: View {
 
     private var hudSection: some View {
         Section {
-            HStack {
-                Text("Scale")
-                Spacer()
-                TextField("0.20", text: $vm.hudScale)
-                    .keyboardType(.decimalPad)
-                    .multilineTextAlignment(.trailing)
-                    .frame(width: 90)
-            }
-
-            Picker("Alignment", selection: $vm.hudAlignment) {
-                ForEach(["default", "tr", "tl", "tc", "cl", "c", "cr", "bl", "bc", "br"], id: \.self) { value in
-                    Text(LocalizedStringKey(value == "default" ? "System default" : value))
+            row {
+                HStack {
+                    Text("Scale")
+                    Spacer()
+                    TextField("0.20", text: $vm.hudScale)
+                        .keyboardType(.decimalPad)
+                        .multilineTextAlignment(.trailing)
+                        .frame(width: 90)
                 }
             }
 
-            Button {
-                showHUDTest = true
-            } label: {
-                Label("Open HUD test", systemImage: "play.rectangle")
+            row {
+                Picker("Alignment", selection: $vm.hudAlignment) {
+                    ForEach(["default", "tr", "tl", "tc", "cl", "c", "cr", "bl", "bc", "br"], id: \.self) { value in
+                        Text(LocalizedStringKey(value == "default" ? "System default" : value))
+                    }
+                }
             }
-            .consistentListSeparator()
+
+            row {
+                Button {
+                    showHUDTest = true
+                } label: {
+                    Label("Open HUD test", systemImage: "play.rectangle")
+                }
+            }
         } header: {
             Text("HUD")
         } footer: {
@@ -176,20 +194,22 @@ struct SettingsView: View {
 
     private var tunnelSection: some View {
         Section {
-            HStack {
-                Text("Address")
-                Spacer()
-                TextField("10.7.0.1", text: $vm.deviceIP)
-                    .keyboardType(.numbersAndPunctuation)
-                    .multilineTextAlignment(.trailing)
-                    .autocapitalization(.none)
-                    .disableAutocorrection(true)
-                    .onSubmit { vm.saveDeviceIP() }
+            row {
+                HStack {
+                    Text("Address")
+                    Spacer()
+                    TextField("10.7.0.1", text: $vm.deviceIP)
+                        .keyboardType(.numbersAndPunctuation)
+                        .multilineTextAlignment(.trailing)
+                        .autocapitalization(.none)
+                        .disableAutocorrection(true)
+                        .onSubmit { vm.saveDeviceIP() }
+                }
             }
         } header: {
             Text("Tunnel")
         } footer: {
-            Text("LocalDevVPN must run in loopback mode. Never enter 127.0.0.1: remotepairingdeviced refuses the control channel and drops into a state where every connection fails until you toggle Developer Mode off and on again.")
+            Text(LocalizedStringKey("LocalDevVPN must run in loopback mode. Never enter 127.0.0.1: remotepairingdeviced refuses the control channel and drops into a state where every connection fails until you toggle Developer Mode off and on again."))
         }
     }
 
@@ -197,9 +217,11 @@ struct SettingsView: View {
 
     private var aboutSection: some View {
         Section {
-            LabeledContent("Version", value: versionDescription)
-            Link("GitHub repository",
-                 destination: URL(string: "https://github.com/YiHoooong/MetalUHD-iOS")!)
+            row { LabeledContent("Version", value: versionDescription) }
+            row {
+                Link("GitHub repository",
+                     destination: URL(string: "https://github.com/YiHoooong/MetalUHD-iOS")!)
+            }
         } header: {
             Text("About")
         }

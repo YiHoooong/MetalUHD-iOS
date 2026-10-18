@@ -155,10 +155,14 @@ enum LocalDevVPN {
 // MARK: - List helpers
 
 extension View {
-    /// Aligns a List row's separators with the row leading edge. Rows that
-    /// start with an icon otherwise draw a shorter line than plain text rows,
-    /// which is what made the Settings separators look inconsistent.
-    func consistentListSeparator() -> some View {
-        alignmentGuide(.listRowSeparatorLeading) { _ in 16 }
+    /// Lets an inset-grouped List row's separator span the whole card instead
+    /// of being inset to the content. The row content is already inset by 16
+    /// points inside the card, so the guides reach 16 points outwards on both
+    /// sides. Without this, rows that start with an icon drew a shorter line
+    /// than plain text rows.
+    func cardWidthListSeparator() -> some View {
+        self
+            .alignmentGuide(.listRowSeparatorLeading) { _ in -16 }
+            .alignmentGuide(.listRowSeparatorTrailing) { dimensions in dimensions[.trailing] + 16 }
     }
 }

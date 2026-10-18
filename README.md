@@ -30,7 +30,7 @@ Apple 文档说 iOS 上 HUD 开关写在 **App 自己的 standard user defaults*
 | 功能 | 说明 |
 |---|---|
 | **桌面式 App 网格** | 4 列图标 + 名称，点一下图标就结束可能正在运行的实例，并带 `MTL_HUD_ENABLED=1` 重新启动它 |
-| **Liquid Glass 风格** | 分组列表 + 毛玻璃搜索框，卡片使用系统分组配色 |
+| **Liquid Glass 风格** | 系统 `.searchable` 搜索栏（iOS 26 SDK 下为原生液态玻璃）、系统分组卡片、全宽分割线 |
 | **LocalDevVPN 检测** | 启动/加载前先探测回环网关，没开就弹窗提示去打开，而不是转圈后失败 |
 | **HUD 选项** | 设置页调 `MTL_HUD_SCALE`（缩放，留空 = Apple 默认 0.2）和 `MTL_HUD_ALIGNMENT`（位置），下次启动生效 |
 | **HUD 自检** | 设置页里用 Metal 画一个三角形并在本 App 进程打开 HUD，用来确认设备上 HUD 本身可用 |
@@ -91,13 +91,13 @@ CI 会把 **`MetalUHD.ipa` 作为 GitHub Release 资产**发布（不是 zip art
 
 ```sh
 # 直接下载 .ipa
-gh release download v0.8.1 -R YiHoooong/MetalUHD-iOS -p MetalUHD.ipa -O MetalUHD.ipa
+gh release download v0.8.2 -R YiHoooong/MetalUHD-iOS -p MetalUHD.ipa -O MetalUHD.ipa
 ```
 
 浏览器（私有仓库需登录）：
 
 ```
-https://github.com/YiHoooong/MetalUHD-iOS/releases/download/v0.8.1/MetalUHD.ipa
+https://github.com/YiHoooong/MetalUHD-iOS/releases/download/v0.8.2/MetalUHD.ipa
 ```
 
 Mac 上手动构建：

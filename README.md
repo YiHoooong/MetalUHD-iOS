@@ -56,7 +56,8 @@ MetalUHD-iOS/
 │   ├── PairingController.swift   本机 RPPairing 主机
 │   ├── Utilities.swift           配对保活 / 局域网权限
 │   ├── GrappaHelper.[hm]         Grappa token（atc 认证）
-│   └── en.lproj / zh-Hans.lproj  本地化
+│   ├── en.lproj / zh-Hans.lproj  本地化
+│   └── Assets.xcassets           图标（由 tools/make-icon.py 生成）
 ├── rust-core/                    Rust FFI（AirliftFFI.xcframework）
 └── .github/workflows/build-ios.yml   CI：Rust → IPA → Release 资产
 ```
@@ -91,13 +92,13 @@ CI 会把 **`MetalUHD.ipa` 作为 GitHub Release 资产**发布（不是 zip art
 
 ```sh
 # 直接下载 .ipa
-gh release download v0.8.3 -R YiHoooong/MetalUHD-iOS -p MetalUHD.ipa -O MetalUHD.ipa
+gh release download v0.8.4 -R YiHoooong/MetalUHD-iOS -p MetalUHD.ipa -O MetalUHD.ipa
 ```
 
 浏览器（私有仓库需登录）：
 
 ```
-https://github.com/YiHoooong/MetalUHD-iOS/releases/download/v0.8.3/MetalUHD.ipa
+https://github.com/YiHoooong/MetalUHD-iOS/releases/download/v0.8.4/MetalUHD.ipa
 ```
 
 Mac 上手动构建：
@@ -160,5 +161,8 @@ HUD 绘制在 **App 自己的 drawable** 里，`MTL_HUD_SCALE` 是 drawable 宽�
 - [airlift](https://github.com/0xjohnnydev/airlift) / [AirCard-iOS](https://github.com/Mak5er/AirCard-iOS) —— 逃逸与隧道
 - [idevice](https://github.com/jkcoxson/idevice) —— RSD / AFC / CoreDevice / InstallationProxy
 - [iOS-MetalHUD-Launcher](https://github.com/wurezhwe/iOS-MetalHUD-Launcher) —— `MTL_HUD_ENABLED` 注入路线的参考
+
+图标由 [`tools/make-icon.py`](tools/make-icon.py)（Pillow）绘制：青→绿的仪表环 + 玻璃播放三角 + HUD 角标，
+`python3 tools/make-icon.py` 可重新生成全部尺寸。
 
 MIT，见 [LICENSE](LICENSE)（继承上游，版权归原作者）。

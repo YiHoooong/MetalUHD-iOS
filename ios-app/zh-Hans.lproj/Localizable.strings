@@ -31,8 +31,6 @@
 "Last target" = "上次目标";
 "cfprefsd only re-reads preference files at boot. A write without a reboot can be invisible to the target app even though the file on disk is correct." = "cfprefsd 只在开机时重新读取偏好文件。即使磁盘上的文件已经正确，不重启的话目标 App 也可能看不到。";
 "How to see the HUD in a game" = "如何在游戏里看到 HUD";
-"1. Tap Load installed apps and pick the game." = "1. 点「加载已安装 App」，选中游戏。";
-"2. Tap Enable for app (writes the keys into its defaults)." = "2. 点「为这个 App 开启」（会把键写进它的 defaults）。";
 "Not every app shows the HUD: some games do not render with Metal directly. Try a 3D game known to use Metal (e.g. Wuthering Waves, Call of Duty: Mobile, Bright Memory)." = "并不是所有 App 都会显示 HUD：有些游戏不是直接用 Metal 渲染。可以试已知支持 Metal 的 3D 游戏（例如《鸣潮》《使命召唤手游》《光明记忆》）。";
 "Apply" = "生效";
 "Preferences are on disk, but cfprefsd caches them. Restart the device so every process reads the new values." = "偏好已经写在磁盘上，但 cfprefsd 会缓存它们。重启设备才能让所有进程读到新值。";
@@ -60,8 +58,6 @@
 "Metal HUD enabled" = "Metal HUD 已开启";
 "Metal HUD disabled" = "Metal HUD 已关闭";
 "HUD key not set" = "HUD 键未设置";
-"3. Force-quit the game, then relaunch it." = "3. 把游戏从后台彻底划掉，再重新打开。";
-"4. If it still does not appear, reboot the device — cfprefsd may serve a cached copy." = "4. 如果还是不出现，再重启设备——cfprefsd 可能还在用缓存。";
 "cfprefsd caches preferences and is not restarted by a respring. A reboot is the only guaranteed way to make it re-read the files." = "cfprefsd 会缓存偏好，而且注销（respring）不会重启它。只有重启设备才能保证它重新读取文件。";
 "Log" = "日志";
 "Settings" = "设置";
@@ -74,3 +70,9 @@
 "About" = "关于";
 "Version" = "版本";
 "GitHub repository" = "GitHub 仓库";
+"1. Reboot first — this clears cfprefsd's cache." = "1. 先重启设备——这会清掉 cfprefsd 的缓存。";
+"2. In this app, load installed apps and pick the game. Do not open the game yet." = "2. 在本 App 里加载已安装 App，选中游戏。此时先不要打开游戏。";
+"3. Tap Enable for app and wait for write verified." = "3. 点「为这个 App 开启」，等待 write verified。";
+"4. Now open the game — the HUD should appear." = "4. 现在再打开游戏——HUD 应该出现。";
+"If Check still shows false after this, the app may not honour HUD defaults on iOS; that case needs the desktop DVT/MTL_HUD_ENABLED route." = "如果按这个顺序做完 Check 仍然是 false，说明这个 App 在 iOS 上不认这套 defaults，只能走电脑端的 DVT / MTL_HUD_ENABLED 注入。";
+"Recommended order: reboot → write → launch the game." = "推荐顺序：重启 → 写入 → 再打开游戏。";

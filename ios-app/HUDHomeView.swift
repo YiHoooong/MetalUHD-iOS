@@ -158,6 +158,10 @@ struct HUDHomeView: View {
                 .font(.caption)
                 .foregroundColor(.secondary)
 
+            Text("Recommended order: reboot → write → launch the game.")
+                .font(.caption)
+                .foregroundColor(.orange)
+
             HStack(spacing: 10) {
                 Button {
                     vm.loadApps()
@@ -405,10 +409,11 @@ struct HUDHomeView: View {
         VStack(alignment: .leading, spacing: 8) {
             Text("How to see the HUD in a game")
                 .font(.subheadline.weight(.medium))
-            Text("1. Tap Load installed apps and pick the game.")
-            Text("2. Tap Enable for app (writes the keys into its defaults).")
-            Text("3. Force-quit the game, then relaunch it.")
-            Text("4. If it still does not appear, reboot the device — cfprefsd may serve a cached copy.")
+            Text("1. Reboot first — this clears cfprefsd's cache.")
+            Text("2. In this app, load installed apps and pick the game. Do not open the game yet.")
+            Text("3. Tap Enable for app and wait for write verified.")
+            Text("4. Now open the game — the HUD should appear.")
+            Text("If Check still shows false after this, the app may not honour HUD defaults on iOS; that case needs the desktop DVT/MTL_HUD_ENABLED route.")
             Text("Not every app shows the HUD: some games do not render with Metal directly. Try a 3D game known to use Metal (e.g. Wuthering Waves, Call of Duty: Mobile, Bright Memory).")
         }
         .font(.caption)

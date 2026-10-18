@@ -391,7 +391,8 @@ enum HUDEngine {
                     lines.append("\(key) = \(describe(values[key]))")
                 }
                 let state = stateFor(values)
-                lines.append("The app reads its defaults at launch — reboot, then force-quit and relaunch it.")
+                lines.append(cfprefsdViewLine(for: app.bundleID))
+                lines.append("The app reads its defaults at launch — reboot first, write, then launch the app.")
                 return makeOutcome(.check, ok: true, state: state, lines: lines,
                                    summary: "\(app.name): \(state.label)", visible: nil,
                                    verified: false, target: app.name, appPath: app.prefsPath)
@@ -491,7 +492,8 @@ enum HUDEngine {
             lines.append("Verified: device file matches the staged bytes (SHA-256)")
         }
 
-        lines.append("⏳ Reboot, then force-quit and relaunch \(app.name).")
+        lines.append(cfprefsdViewLine(for: app.bundleID))
+        lines.append("⏳ Recommended order: reboot first, then write, then launch \(app.name) — so its defaults are not cached before the write.")
         let summary = "\(app.name): HUD \(enabled ? "enabled" : "disabled") — reboot then relaunch"
         return makeOutcome(action, ok: verified, state: enabled ? .enabled : .disabled, lines: lines,
                            summary: summary, visible: nil, verified: verified,
@@ -663,6 +665,22 @@ enum HUDEngine {
         )
     }
 
+    /// cfprefsd's own answer for another app's domain (`nil` when the sandbox
+    /// refuses the lookup). Used only for diagnostics: a value here means the
+    /// daemon is serving the written file, not just the bytes on disk.
+    static func preferenceVisible(for bundleID: String) -> Bool? {
+        guard let raw = CFPreferencesCopyValue(
+            primaryHudKey as CFString,
+            bundleID as CFString,
+            kCFPreferencesCurrentUser,
+            kCFPreferencesAnyHost
+        ) else { return nil }
+
+        if let number = raw as? NSNumber { return number.boolValue }
+        if let string = raw as? String { return (string as NSString).boolValue }
+        return nil
+    }
+
     // MARK: - device I/O
 
     static func readDeviceFile(pairingPath: String, dir: String, leaf: String,
@@ -784,6 +802,14 @@ enum HUDEngine {
     private static func describe(_ value: Bool?) -> String {
         guard let value = value else { return "not set" }
         return value ? "true" : "false"
+    }
+
+    private static func cfprefsdViewLine(for bundleID: String) -> String {
+        switch preferenceVisible(for: bundleID) {
+        case .none: return "cfprefsd view (\(bundleID)): unavailable (sandbox may block reading another app's domain)"
+        case .some(true): return "cfprefsd view (\(bundleID)): true"
+        case .some(false): return "cfprefsd view (\(bundleID)): false"
+        }
     }
 
     private static func visibleLine(_ visible: Bool?) -> String {

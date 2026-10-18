@@ -161,16 +161,19 @@ IPA 是刻意**不签名**的，用你平时签 AirliftSilence 的工具（AltSt
 1. 打开 LocalDevVPN（回环模式），确认 App 里 **配对文件已就绪**；没有就 Start pairing 或导入。
 2. （推荐）点 **打开 HUD 测试** —— 应该能看到 Metal 三角形 + 右上角 HUD。
    如果这里都没有 HUD，说明设备/系统层面不支持，先不用折腾游戏。
-3. 点 **加载已安装 App**，搜索并选中游戏。
-4. 点 **为这个 App 开启**。等它跑完：一次运行要几十秒（读 + 写 + 回读校验）。
-5. 看结果：`write verified`（SHA-256 一致）。
-6. **先把游戏从后台彻底划掉，再打开**，看有没有 HUD。
-7. 如果还没有，先去「诊断」点 **测试 cfprefsd 重载**：
-   - **能感知** → 再强退重开一次（理论上不需要重启）；
-   - **有缓存** → 点 **重启设备**（或手动重启），cfprefsd 只在开机时重新读文件。
-8. 重启后再次强退并打开游戏 —— HUD 应出现在右上角。
+3. **先重启设备**（或者「诊断」里点测试 cfprefsd 重载，确认是不是缓存态）。
+   这一步是为了清掉 cfprefsd 里目标 App 的旧缓存——先写后重启的话，
+   重启过程中缓存可能把外部写入覆盖回去。
+4. **不要打开游戏**。在 MetalUHD 里点 **加载已安装 App**，搜索并选中游戏。
+5. 点 **为这个 App 开启**。等它跑完：一次运行要几十秒（读 + 写 + 回读校验）。
+6. 看结果：`write verified`（SHA-256 一致），`cfprefsd view (<bundle>): true` 说明守护进程也认了。
+7. 现在再打开游戏 —— HUD 应出现在右上角。
 
-想关掉：选中同一个 App → **关闭**，同样按上面的顺序验证；缓存状态下需要重启。
+想关掉：选中同一个 App → **关闭**，推荐同样按「重启 → 写入 → 再开游戏」的顺序。
+
+如果按这个顺序做完、Check 仍显示 `false`，那基本就是 iOS 对 App Store App 的限制
+（HUD 的 defaults 路径只对开发签名/TestFlight 的 App 生效），需要走电脑端
+`pymobiledevice3 developer dvt launch --env MTL_HUD_ENABLED=1` 这类注入路线。
 
 ---
 
@@ -194,7 +197,7 @@ IPA 是刻意**不签名**的，用你平时签 AirliftSilence 的工具（AltSt
 | `Stage verification failed` / 连不上 | LocalDevVPN 是否在跑、地址是否 `10.7.x.x`；换 `10.7.0.2` / `10.7.0.3` |
 | `Grappa session could not be established` | 确认 `ALGetGrappaToken` 硬引用还在（见上） |
 | 自检页也没有 HUD | 设备/系统不支持 HUD（或该 iOS 版本移除了），与写入无关 |
-| 按 App 写入成功、重启后游戏仍无 HUD | 先 **Check** 该 App 确认三个键为 true；再确认游戏确实是 Metal 渲染（换 3D 游戏试）；最后看是不是该 App 的偏好文件被 cfprefsd 覆盖（重启后重新 Check） |
+| 按 App 写入成功、重启后游戏仍无 HUD | 先 **Check** 该 App：三个键是否 true、`cfprefsd view` 是否 true；再换成「重启 → 写入 → 开游戏」的顺序重试；确认游戏确实是 Metal 渲染。若 Check 一直 false，参见"已知限制"里的 iOS 签名限制 |
 | 全局模式 `true` / `cfprefsd: true` 但没 HUD | 已知现象：iOS 上 HUD 不读 global 域。改用按 App 模式 |
 | 注销之后还是不生效 | 正常：respring 不重启 cfprefsd。看诊断里的 cfprefsd 探测，必要时重启设备 |
 | 想确认 key 是否真的写进去了 | 点 Check；诊断卡片会显示上次写入时间和"写后是否重启" |
@@ -206,6 +209,8 @@ IPA 是刻意**不签名**的，用你平时签 AirliftSilence 的工具（AltSt
 - 依赖 AirTraffic 逃逸，**iOS 27.2 beta 3 起失效**。
 - 生效需要**重启**（cfprefsd 缓存）；没有找到在设备上无重启刷新 cfprefsd 的办法。
 - HUD 只在 **Metal 渲染**的 App 里出现；不是所有游戏都支持。
+- Apple 文档说 iOS 上 HUD 只对**开发签名/TestFlight** 的 App 生效；自检页能出 HUD 也印证了这一点。
+  App Store 游戏如果按上面的顺序仍不认 defaults，只能走电脑端 DVT 的 `MTL_HUD_ENABLED` 注入。
 - 写 App 容器属于设备端修改，App 内做了备份与校验，但仍建议先用非主力机验证。
 - `rust-core/vendor/` 是上游 vendored 依赖，体积较大且包含与本 demo 无关的 FFI（`passthm`、zip、syslog 等），保留是为了少改动。
 

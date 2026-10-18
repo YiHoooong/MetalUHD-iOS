@@ -487,6 +487,32 @@ pub unsafe extern "C" fn al_list_apps(
     }
 }
 
+/// Cache app icons (SpringBoardServices) into `out_dir`.
+/// `bundle_ids_json` is a JSON array of bundle identifiers.
+#[no_mangle]
+pub unsafe extern "C" fn al_cache_app_icons(
+    pairing_path: *const c_char,
+    bundle_ids_json: *const c_char,
+    out_dir: *const c_char,
+    log_cb: exploit::ALLogCallback,
+    ctx: *mut c_void,
+    out_count: *mut u32,
+    out_error: *mut *mut c_char,
+) -> i32 {
+    let res = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        exploit::cache_app_icons(pairing_path, bundle_ids_json, out_dir, log_cb, ctx, out_count, out_error)
+    }));
+    match res {
+        Ok(rc) => rc,
+        Err(e) => {
+            if !out_error.is_null() {
+                *out_error = ffi_util::cstr(format!("Rust panic in al_cache_app_icons: {e:?}"));
+            }
+            1
+        }
+    }
+}
+
 /// Launch an installed app with `MTL_HUD_ENABLED=1` through CoreDevice's
 /// appservice over the RSD tunnel. Returns 0 on success (with out_pid set),
 /// 1 on error (with out_error set).

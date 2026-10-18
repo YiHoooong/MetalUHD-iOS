@@ -191,6 +191,17 @@ int32_t al_list_apps(const char *pairing_path,
                      char **out_json,
                      char **out_error);
 
+// Cache app icons via SpringBoardServices into out_dir.
+// bundle_ids_json is a JSON array of bundle identifiers. Icons are written as
+// <out_dir>/<sanitized-bundle-id>.png. Returns 0 on success with *out_count set.
+int32_t al_cache_app_icons(const char *pairing_path,
+                           const char *bundle_ids_json,
+                           const char *out_dir,
+                           ALLogCallback log_cb,
+                           void *ctx,
+                           uint32_t *out_count,
+                           char **out_error);
+
 // Launch an installed app with MTL_HUD_ENABLED=1 through CoreDevice's
 // com.apple.coredevice.appservice (RSD tunnel, developer mode required).
 // `scale` is MTL_HUD_SCALE (0.1-1.0, fraction of the drawable width; <= 0

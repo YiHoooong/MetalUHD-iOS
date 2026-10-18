@@ -7,6 +7,7 @@ struct SettingsView: View {
     @ObservedObject private var vm = HUDViewModel.shared
     @ObservedObject private var pairing = PairingController.shared
     @State private var showImporter = false
+    @State private var showHUDTest = false
 
     /// Pairing files come from other sideloaders, which do not agree on an
     /// extension. `.plist` covers an exported record; the rest are the names
@@ -34,6 +35,7 @@ struct SettingsView: View {
                 VStack(spacing: 16) {
                     pairingCard
                     hudOptionsCard
+                    hudTestCard
                     tunnelCard
                     aboutCard
                 }
@@ -42,6 +44,19 @@ struct SettingsView: View {
             .navigationTitle("Settings")
             .navigationBarTitleDisplayMode(.inline)
             .onAppear { vm.refreshPairingState() }
+            .sheet(isPresented: $showHUDTest) {
+                NavigationView {
+                    MetalHUDTestView()
+                        .ignoresSafeArea()
+                        .navigationTitle("Metal HUD test")
+                        .navigationBarTitleDisplayMode(.inline)
+                        .toolbar {
+                            ToolbarItem(placement: .cancellationAction) {
+                                Button("Done") { showHUDTest = false }
+                            }
+                        }
+                }
+            }
         }
     }
 
@@ -217,6 +232,33 @@ struct SettingsView: View {
             Text("Leave the scale empty to use Apple's default (0.2). Alignment codes: tr/tl/tc/cl/c/cr/bl/bc/br. Changes take effect on the next “Launch with HUD”.")
                 .font(.caption2)
                 .foregroundColor(.secondary)
+        }
+        .padding(12)
+        .background(Color(.secondarySystemBackground))
+        .cornerRadius(12)
+    }
+
+    // MARK: HUD test
+
+    private var hudTestCard: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Image(systemName: "cube.transparent")
+                    .foregroundColor(.purple)
+                Text("HUD test")
+                    .font(.subheadline.weight(.medium))
+                Spacer()
+            }
+            Text("Renders a Metal triangle and enables the HUD for this app's own process. Use it to confirm the HUD works on this device.")
+                .font(.caption)
+                .foregroundColor(.secondary)
+            Button {
+                showHUDTest = true
+            } label: {
+                Label("Open HUD test", systemImage: "play.rectangle")
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.bordered)
         }
         .padding(12)
         .background(Color(.secondarySystemBackground))

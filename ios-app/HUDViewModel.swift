@@ -44,10 +44,8 @@ enum PinNotifier {
 
 // MARK: - View model
 
-/// Screen state plus the one place a device run is serialised.
-///
-/// There is exactly one instance because the device tolerates a single exploit
-/// session at a time and because the log sink is shared with the FFI callbacks.
+/// Screen state: the app list, the selected game, the HUD options and the one
+/// device operation the app performs now (launch with `MTL_HUD_ENABLED=1`).
 @MainActor
 final class HUDViewModel: ObservableObject {
 
@@ -57,47 +55,35 @@ final class HUDViewModel: ObservableObject {
     @Published var busy = false
     @Published var stage = ""
     @Published var state: HUDState = .unknown
-    @Published var outcomeLines: [String] = []
     @Published var lastSummary = ""
-    @Published var cfprefsdSees: Bool? = nil
-    @Published var writeVerified = false
     @Published var deviceIP = HUDEngine.defaultTargetHost
     @Published var pairingReady = false
     @Published var pairingName = ""
     /// The pairing file on disk, for the share sheet. Nil until one exists.
     @Published var pairingFileURL: URL?
 
-    // Per-app HUD support.
+    // App list.
     @Published var apps: [InstalledApp] = []
     @Published var appsLoaded = false
-    @Published var selectedBundleID: String? = nil
     @Published var appFilter = ""
+    @Published var appIcons: [String: UIImage] = [:]
 
-    // HUD launch options (MTL_HUD_* environment variables). Empty/"default"
-    // means "do not set it": Apple's defaults are 0.2 / topright / Lite, and
-    // overriding them is what caused the stretched-single-line HUD.
+    // HUD launch options. "default"/"" means "do not override Apple".
     @Published var hudScale: String = UserDefaults.standard.string(forKey: "metaluhdScale") ?? ""
     @Published var hudAlignment: String = UserDefaults.standard.string(forKey: "metaluhdAlignment") ?? "default"
-    // MTL_HUD_ELEMENTS is intentionally not exposed: this iOS build renders an
-    // empty bar for every named layout we tried, so it stays unset.
 
     // Diagnostics.
-    @Published var lastWriteAt: Date? = HUDViewModel.storedLastWrite
-    @Published var lastAppTarget: String = ""
-    @Published var reloadProbe: ReloadProbe? = nil
+    @Published var lastLaunchAt: Date? = HUDViewModel.storedLastLaunch
 
     private var drainTimer: Timer?
     /// The last URL handed to `adoptPairingFile`, so a share-sheet open that is
     /// delivered twice (app delegate + SwiftUI's onOpenURL) only imports once.
     private var lastAdoption: (path: String, at: Date)?
-    /// The tail of the run queue.
-    private var chain: Task<HUDOutcome, Never>?
-    private var queued = 0
 
-    private static let lastWriteKey = "metaluhdLastWrite"
+    private static let lastLaunchKey = "metaluhdLastLaunch"
 
-    private static var storedLastWrite: Date? {
-        let t = UserDefaults.standard.double(forKey: lastWriteKey)
+    private static var storedLastLaunch: Date? {
+        let t = UserDefaults.standard.double(forKey: lastLaunchKey)
         return t > 0 ? Date(timeIntervalSince1970: t) : nil
     }
 
@@ -110,8 +96,6 @@ final class HUDViewModel: ObservableObject {
 
     func refreshPairingState() {
         let path = PairingController.pairingFilePath()
-        // A zero-byte pairing file is what a failed pairing leaves behind, so
-        // treat it as "not ready" rather than offering it for export.
         let size = (try? FileManager.default.attributesOfItem(atPath: path)[.size] as? Int) ?? 0
         pairingReady = size > 0
         pairingFileURL = pairingReady ? URL(fileURLWithPath: path) : nil
@@ -122,13 +106,9 @@ final class HUDViewModel: ObservableObject {
         HUDEngine.storedTargetHost = deviceIP
     }
 
-    var hasBackup: Bool {
-        FileManager.default.fileExists(atPath: HUDEngine.backupURL.path)
-    }
-
-    var selectedApp: InstalledApp? {
-        guard let id = selectedBundleID else { return nil }
-        return apps.first { $0.bundleID == id }
+    private var iconCacheDir: URL {
+        FileManager.default.temporaryDirectory
+            .appendingPathComponent("metaluhd-icons", isDirectory: true)
     }
 
     var filteredApps: [InstalledApp] {
@@ -141,45 +121,26 @@ final class HUDViewModel: ObservableObject {
 
     // MARK: diagnostics
 
-    /// The iOS version and model, for the diagnostics card.
     var deviceDescription: String {
         "iOS \(UIDevice.current.systemVersion) · \(UIDevice.current.model)"
     }
 
-    /// Whether the device has been rebooted since the last successful write.
-    /// cfprefsd only re-reads the preferences files at boot, so this is the
-    /// key check after a write.
-    var rebootedSinceWrite: Bool? {
-        guard let date = lastWriteAt else { return nil }
-        let bootTime = Date().timeIntervalSince1970 - ProcessInfo.processInfo.systemUptime
-        return bootTime > date.timeIntervalSince1970
-    }
-
-    var lastWriteDescription: String {
-        guard let date = lastWriteAt else { return "never" }
+    var lastLaunchDescription: String {
+        guard let date = lastLaunchAt else { return "—" }
         let formatter = DateFormatter()
         formatter.dateFormat = "MM-dd HH:mm:ss"
         return formatter.string(from: date)
     }
 
-    /// Runs the cfprefsd external-edit probe. Cheap: it only touches this
-    /// app's own preferences file, no device session needed.
-    func runReloadProbe() {
-        let probe = HUDEngine.probeCfprefsdReload()
-        reloadProbe = probe
-        append("cfprefsd probe: \(probe.detail)")
-    }
-
-    private func recordWrite() {
+    private func recordLaunch() {
         let now = Date()
-        lastWriteAt = now
-        UserDefaults.standard.set(now.timeIntervalSince1970, forKey: Self.lastWriteKey)
+        lastLaunchAt = now
+        UserDefaults.standard.set(now.timeIntervalSince1970, forKey: Self.lastLaunchKey)
     }
 
     // MARK: pairing file
 
-    /// Adopt a pairing file handed to us from outside the app: the document
-    /// picker, the share sheet, or another app's "Open in MetalUHD".
+    /// Adopt a pairing file handed to us from outside the app.
     @discardableResult
     func adoptPairingFile(at url: URL) -> Bool {
         let now = Date()
@@ -202,115 +163,17 @@ final class HUDViewModel: ObservableObject {
         return pairingReady
     }
 
-    // MARK: runs
-
-    /// Runs one global action and waits for its outcome.
-    @discardableResult
-    func run(_ action: HUDAction) async -> HUDOutcome {
-        await enqueue(action.title) { pairingPath in
-            HUDEngine.run(action, pairingPath: pairingPath)
-        }
-    }
-
-    /// Runs one per-app action.
-    @discardableResult
-    func runForApp(_ app: InstalledApp, enabled: Bool) async -> HUDOutcome {
-        let title = "\(enabled ? "Enable" : "Disable") · \(app.name)"
-        return await enqueue(title) { pairingPath in
-            HUDEngine.applyForApp(app, enabled: enabled, pairingPath: pairingPath)
-        }
-    }
-
-    @discardableResult
-    func checkForApp(_ app: InstalledApp) async -> HUDOutcome {
-        await enqueue("Check · \(app.name)") { pairingPath in
-            HUDEngine.checkApp(app, pairingPath: pairingPath)
-        }
-    }
-
-    private func enqueue(_ label: String,
-                         _ work: @escaping @Sendable (String) -> HUDOutcome) async -> HUDOutcome {
-        let previous = chain
-        queued += 1
-        busy = true
-
-        let task = Task { @MainActor in
-            defer { self.finishQueuedRun() }
-            _ = await previous?.value
-            return await self.execute(label, work)
-        }
-        chain = task
-        return await task.value
-    }
-
-    /// Fire-and-forget wrappers for buttons.
-    func request(_ action: HUDAction) {
-        Task { await run(action) }
-    }
-
-    func requestForApp(_ app: InstalledApp, enabled: Bool) {
-        Task { await runForApp(app, enabled: enabled) }
-    }
-
-    func requestCheckForApp(_ app: InstalledApp) {
-        Task { await checkForApp(app) }
-    }
-
-    func check() { request(.check) }
-    func enable() { request(.enable) }
-    func disable() { request(.disable) }
-    func restoreBackup() { request(.restoreBackup) }
-
-    private func finishQueuedRun() {
-        queued = max(0, queued - 1)
-        if queued == 0 { busy = false }
-    }
-
-    private func execute(_ label: String,
-                         _ work: @escaping @Sendable (String) -> HUDOutcome) async -> HUDOutcome {
-        stage = label
-        append("── \(label) ──")
-
-        // Resolved on the main actor before the job: PairingController is
-        // @MainActor, so the background work must not call into it.
-        HUDEngine.applyTargetHost(deviceIP)
-        let pairingPath = PairingController.pairingFilePath()
-        startDraining()
-
-        let outcome = await Task.detached(priority: .userInitiated) {
-            work(pairingPath)
-        }.value
-
-        stopDraining()
-        stage = ""
-        for line in outcome.lines { append(line) }
-        outcomeLines = outcome.lines
-        lastSummary = outcome.summary
-        state = outcome.state
-        cfprefsdSees = outcome.cfprefsdSees
-        writeVerified = outcome.writeVerified
-        if outcome.ok, outcome.action == .enable || outcome.action == .disable {
-            recordWrite()
-        }
-        if outcome.appPrefsPath != nil {
-            lastAppTarget = outcome.target
-        }
-        return outcome
-    }
-
     // MARK: app list
 
-    /// Loads the installed-app list over InstallationProxy. This is a device
-    /// session of its own, so it waits for any queued run to finish.
+    /// Loads the installed-app list over InstallationProxy.
     func loadApps() {
         guard !busy else { return }
         busy = true
         stage = "Loading installed apps…"
         append("── Loading installed apps ──")
 
+        let pairingPath = PairingController.pairingFilePath()
         Task {
-            _ = await chain?.value
-            let pairingPath = PairingController.pairingFilePath()
             startDraining()
             let result = await Task.detached(priority: .userInitiated) {
                 HUDEngine.listApps(pairingPath: pairingPath)
@@ -321,10 +184,30 @@ final class HUDViewModel: ObservableObject {
             case let .success(list):
                 apps = list
                 appsLoaded = true
-                if selectedBundleID == nil || !list.contains(where: { $0.bundleID == selectedBundleID }) {
-                    selectedBundleID = list.first?.bundleID
-                }
                 append("Found \(list.count) installed app(s)")
+
+                // Icons come from SpringBoardServices; one extra RSD session for
+                // the whole batch.
+                stage = "Loading app icons…"
+                let dir = iconCacheDir
+                let iconResult = await Task.detached(priority: .utility) {
+                    HUDEngine.cacheAppIcons(list, pairingPath: pairingPath, outDir: dir)
+                }.value
+
+                var icons: [String: UIImage] = [:]
+                for app in list {
+                    let name = HUDEngine.iconFileName(for: app.bundleID)
+                    let url = dir.appendingPathComponent("\(name).png")
+                    if let data = try? Data(contentsOf: url), let image = UIImage(data: data) {
+                        icons[app.bundleID] = image
+                    }
+                }
+                appIcons = icons
+                if case let .failure(f) = iconResult {
+                    append("⚠️ App icons unavailable: \(f.message)")
+                } else {
+                    append("Loaded \(icons.count) app icon(s)")
+                }
             case let .failure(f):
                 append("✗ App list failed: \(f.message)")
             }
@@ -333,24 +216,24 @@ final class HUDViewModel: ObservableObject {
         }
     }
 
-    /// Launches the selected app with MTL_HUD_ENABLED=1 through CoreDevice.
-    /// This is the cleanest route: no reboot, no defaults edit.
+    // MARK: launch
+
+    /// Launches the selected app with `MTL_HUD_ENABLED=1` through CoreDevice.
+    /// No reboot, no defaults edit.
     func launchWithHUD(_ app: InstalledApp) {
         guard !busy else { return }
         busy = true
         stage = "Launching \(app.name)…"
         append("── Launch with HUD: \(app.name) ──")
+
         let pairingPath = PairingController.pairingFilePath()
-        // 0 means "leave MTL_HUD_SCALE unset" (Apple's default is 0.2).
         let rawScale = hudScale.trimmingCharacters(in: .whitespaces)
         let scale = rawScale.isEmpty ? 0.0 : min(max(Double(rawScale) ?? 0.0, 0.1), 1.0)
-        // Copy the MainActor-isolated settings into locals before the detached
-        // task; reading them inside it would need actor hops.
         let alignment = hudAlignment == "default" ? "" : hudAlignment
-        // Keep MTL_HUD_ELEMENTS unset (see the note above the property).
+        // MTL_HUD_ELEMENTS is not supported by this iOS build; never send it.
         let elements = ""
-        UserDefaults.standard.set(scale, forKey: "metaluhdScale")
-        UserDefaults.standard.set(alignment, forKey: "metaluhdAlignment")
+        UserDefaults.standard.set(hudScale, forKey: "metaluhdScale")
+        UserDefaults.standard.set(hudAlignment, forKey: "metaluhdAlignment")
 
         Task {
             let result = await Task.detached(priority: .userInitiated) {
@@ -364,39 +247,12 @@ final class HUDViewModel: ObservableObject {
                 append("✅ Launched \(app.name) with MTL_HUD_ENABLED=1 (pid \(pid))")
                 append("No reboot needed. The HUD should appear in the game's top-right corner.")
                 lastSummary = "\(app.name): launched with HUD"
-                state = .enabled
+                state = .launched
+                recordLaunch()
             case let .failure(f):
                 append("✗ Launch with HUD failed: \(f.message)")
                 append("If this reports a missing service, this iOS build needs the developer disk image — use the PC/DVT route.")
                 lastSummary = "Launch with HUD failed"
-            }
-            stage = ""
-            busy = false
-        }
-    }
-
-    // MARK: reboot
-
-    /// Ask Diagnostics Relay to restart the device. A reboot is what makes the
-    /// edited preferences visible to every process (cfprefsd caches them).
-    func reboot() {
-        guard !busy else { return }
-        busy = true
-        stage = "Restarting the device…"
-        append("── Reboot device ──")
-        let pairingPath = PairingController.pairingFilePath()
-
-        Task {
-            let result = await Task.detached(priority: .userInitiated) {
-                HUDEngine.rebootDevice(pairingPath: pairingPath)
-            }.value
-            switch result {
-            case .success:
-                append("✅ Restart requested. The device will reboot in a few seconds.")
-                append("After it comes back, force-quit and relaunch the target app.")
-            case let .failure(f):
-                append("✗ Reboot failed: \(f.message)")
-                append("You can also reboot from Settings › General › Shut Down.")
             }
             stage = ""
             busy = false

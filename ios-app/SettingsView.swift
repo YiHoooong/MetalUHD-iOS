@@ -19,17 +19,23 @@ struct SettingsView: View {
         return types
     }()
 
-    static let alignments: [(code: String, label: String)] = [
-        ("default", "System default"),
-        ("tr", "Top right"),
-        ("tl", "Top left"),
-        ("tc", "Top center"),
-        ("cl", "Center left"),
-        ("c", "Center"),
-        ("cr", "Center right"),
-        ("bl", "Bottom left"),
-        ("bc", "Bottom center"),
-        ("br", "Bottom right"),
+    private struct AlignmentChoice: Identifiable {
+        let code: String
+        let label: String
+        var id: String { code }
+    }
+
+    static let alignments: [AlignmentChoice] = [
+        AlignmentChoice(code: "default", label: "System default"),
+        AlignmentChoice(code: "tr", label: "Top right"),
+        AlignmentChoice(code: "tl", label: "Top left"),
+        AlignmentChoice(code: "tc", label: "Top center"),
+        AlignmentChoice(code: "cl", label: "Center left"),
+        AlignmentChoice(code: "c", label: "Center"),
+        AlignmentChoice(code: "cr", label: "Center right"),
+        AlignmentChoice(code: "bl", label: "Bottom left"),
+        AlignmentChoice(code: "bc", label: "Bottom center"),
+        AlignmentChoice(code: "br", label: "Bottom right"),
     ]
 
     private var versionDescription: String {
@@ -184,7 +190,7 @@ struct SettingsView: View {
 
             row {
                 Picker("Alignment", selection: $vm.hudAlignment) {
-                    ForEach(Self.alignments, id: \.code) { choice in
+                    ForEach(Self.alignments) { choice in
                         Text(LocalizedStringKey(choice.label)).tag(choice.code)
                     }
                 }

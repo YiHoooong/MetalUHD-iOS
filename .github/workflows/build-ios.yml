@@ -1,5 +1,9 @@
 name: Build unsigned IPA
 
+# Least privilege: the build only reads the repo.
+permissions:
+  contents: read
+
 on:
   workflow_dispatch:
   push:

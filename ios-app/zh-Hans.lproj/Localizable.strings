@@ -83,4 +83,6 @@
 "Alignment" = "位置";
 "Layout" = "显示内容";
 "The HUD is drawn at the game's own render resolution, so it scales with the frame and can look soft. A larger scale (0.3–0.5) is easier to read; the game's own resolution setting has the final say." = "HUD 是按游戏自己的渲染分辨率绘制的，会跟着画面一起被缩放，所以可能发虚。调大缩放（0.3–0.5）会更好读；最终清晰度还是取决于游戏自己的分辨率设置。";
-"Alignment codes: tr/tl/tc/cl/c/cr/bl/bc/br (top/center/bottom × left/center/right). Take effect on the next “Launch with HUD”." = "位置代码：tr/tl/tc/cl/c/cr/bl/bc/br（上/中/下 × 左/中/右）。下次「启动并显示 HUD」时生效。";
+"Leave the scale empty to use Apple's default (0.2). Alignment codes: tr/tl/tc/cl/c/cr/bl/bc/br. Changes take effect on the next “Launch with HUD”." = "缩放留空即用 Apple 默认值（0.2）。位置代码：tr/tl/tc/cl/c/cr/bl/bc/br。改完下次「启动并显示 HUD」生效。";
+"System default" = "系统默认";
+"If the HUD collapses into a single horizontal line, the game probably rotated or changed its drawable while launching. Leave these on System default (Apple: 0.2 / topright / Lite) and launch again." = "如果 HUD 缩成一条横线，通常是游戏在启动时旋转/改变了绘制尺寸。把这些选项留在「系统默认」（Apple 默认 0.2 / 右上 / Lite）再启动一次。";

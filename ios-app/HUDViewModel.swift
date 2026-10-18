@@ -73,10 +73,12 @@ final class HUDViewModel: ObservableObject {
     @Published var selectedBundleID: String? = nil
     @Published var appFilter = ""
 
-    // HUD launch options (MTL_HUD_* environment variables).
-    @Published var hudScale: String = UserDefaults.standard.string(forKey: "metaluhdScale") ?? "0.35"
-    @Published var hudAlignment: String = UserDefaults.standard.string(forKey: "metaluhdAlignment") ?? "tr"
-    @Published var hudElements: String = UserDefaults.standard.string(forKey: "metaluhdElements") ?? "Default"
+    // HUD launch options (MTL_HUD_* environment variables). Empty/"default"
+    // means "do not set it": Apple's defaults are 0.2 / topright / Lite, and
+    // overriding them is what caused the stretched-single-line HUD.
+    @Published var hudScale: String = UserDefaults.standard.string(forKey: "metaluhdScale") ?? ""
+    @Published var hudAlignment: String = UserDefaults.standard.string(forKey: "metaluhdAlignment") ?? "default"
+    @Published var hudElements: String = UserDefaults.standard.string(forKey: "metaluhdElements") ?? "default"
 
     // Diagnostics.
     @Published var lastWriteAt: Date? = HUDViewModel.storedLastWrite
@@ -338,11 +340,13 @@ final class HUDViewModel: ObservableObject {
         stage = "Launching \(app.name)…"
         append("── Launch with HUD: \(app.name) ──")
         let pairingPath = PairingController.pairingFilePath()
-        let scale = min(max(Double(hudScale) ?? 0.35, 0.1), 1.0)
+        // 0 means "leave MTL_HUD_SCALE unset" (Apple's default is 0.2).
+        let rawScale = hudScale.trimmingCharacters(in: .whitespaces)
+        let scale = rawScale.isEmpty ? 0.0 : min(max(Double(rawScale) ?? 0.0, 0.1), 1.0)
         // Copy the MainActor-isolated settings into locals before the detached
         // task; reading them inside it would need actor hops.
-        let alignment = hudAlignment
-        let elements = hudElements
+        let alignment = hudAlignment == "default" ? "" : hudAlignment
+        let elements = hudElements == "default" ? "" : hudElements
         UserDefaults.standard.set(scale, forKey: "metaluhdScale")
         UserDefaults.standard.set(alignment, forKey: "metaluhdAlignment")
         UserDefaults.standard.set(elements, forKey: "metaluhdElements")

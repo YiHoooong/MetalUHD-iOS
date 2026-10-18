@@ -109,8 +109,8 @@ struct SettingsView: View {
                 ShareLink(item: url) {
                     Label("Export pairing file", systemImage: "square.and.arrow.up")
                 }
+                .consistentListSeparator()
             }
-            .consistentListSeparator()
 
             if LocalDevVPN.isInstalled {
                 Button {
@@ -118,8 +118,8 @@ struct SettingsView: View {
                 } label: {
                     Label("Open LocalDevVPN", systemImage: "network")
                 }
+                .consistentListSeparator()
             }
-            .consistentListSeparator()
         } header: {
             Text("Pairing")
         } footer: {

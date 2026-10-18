@@ -339,16 +339,20 @@ final class HUDViewModel: ObservableObject {
         append("── Launch with HUD: \(app.name) ──")
         let pairingPath = PairingController.pairingFilePath()
         let scale = min(max(Double(hudScale) ?? 0.35, 0.1), 1.0)
-        UserDefaults.standard.set(hudScale, forKey: "metaluhdScale")
-        UserDefaults.standard.set(hudAlignment, forKey: "metaluhdAlignment")
-        UserDefaults.standard.set(hudElements, forKey: "metaluhdElements")
+        // Copy the MainActor-isolated settings into locals before the detached
+        // task; reading them inside it would need actor hops.
+        let alignment = hudAlignment
+        let elements = hudElements
+        UserDefaults.standard.set(scale, forKey: "metaluhdScale")
+        UserDefaults.standard.set(alignment, forKey: "metaluhdAlignment")
+        UserDefaults.standard.set(elements, forKey: "metaluhdElements")
 
         Task {
             let result = await Task.detached(priority: .userInitiated) {
                 HUDEngine.launchWithHUD(app, pairingPath: pairingPath,
                                         scale: scale,
-                                        alignment: hudAlignment,
-                                        elements: hudElements)
+                                        alignment: alignment,
+                                        elements: elements)
             }.value
             switch result {
             case let .success(pid):

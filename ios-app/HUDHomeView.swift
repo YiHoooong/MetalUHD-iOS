@@ -257,6 +257,19 @@ struct HUDHomeView: View {
                         .buttonStyle(.bordered)
                         .controlSize(.regular)
                     }
+
+                    Button {
+                        vm.launchWithHUD(app)
+                    } label: {
+                        Label("Launch with HUD (no reboot)", systemImage: "play.fill")
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.regular)
+
+                    Text("Launches the app with MTL_HUD_ENABLED=1 through CoreDevice — no reboot and no defaults change. Try this first on iOS; the defaults route below is the fallback.")
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
                 }
             }
         }

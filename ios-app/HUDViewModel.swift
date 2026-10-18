@@ -325,6 +325,35 @@ final class HUDViewModel: ObservableObject {
         }
     }
 
+    /// Launches the selected app with MTL_HUD_ENABLED=1 through CoreDevice.
+    /// This is the cleanest route: no reboot, no defaults edit.
+    func launchWithHUD(_ app: InstalledApp) {
+        guard !busy else { return }
+        busy = true
+        stage = "Launching \(app.name)…"
+        append("── Launch with HUD: \(app.name) ──")
+        let pairingPath = PairingController.pairingFilePath()
+
+        Task {
+            let result = await Task.detached(priority: .userInitiated) {
+                HUDEngine.launchWithHUD(app, pairingPath: pairingPath)
+            }.value
+            switch result {
+            case let .success(pid):
+                append("✅ Launched \(app.name) with MTL_HUD_ENABLED=1 (pid \(pid))")
+                append("No reboot needed. The HUD should appear in the game's top-right corner.")
+                lastSummary = "\(app.name): launched with HUD"
+                state = .enabled
+            case let .failure(f):
+                append("✗ Launch with HUD failed: \(f.message)")
+                append("If this reports a missing service, this iOS build needs the developer disk image — use the PC/DVT route.")
+                lastSummary = "Launch with HUD failed"
+            }
+            stage = ""
+            busy = false
+        }
+    }
+
     // MARK: reboot
 
     /// Ask Diagnostics Relay to restart the device. A reboot is what makes the

@@ -487,6 +487,32 @@ pub unsafe extern "C" fn al_list_apps(
     }
 }
 
+/// Launch an installed app with `MTL_HUD_ENABLED=1` through CoreDevice's
+/// appservice over the RSD tunnel. Returns 0 on success (with out_pid set),
+/// 1 on error (with out_error set).
+#[no_mangle]
+pub unsafe extern "C" fn al_launch_app_with_hud(
+    pairing_path: *const c_char,
+    bundle_id: *const c_char,
+    log_cb: exploit::ALLogCallback,
+    ctx: *mut c_void,
+    out_pid: *mut u32,
+    out_error: *mut *mut c_char,
+) -> i32 {
+    let res = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        exploit::launch_app_with_hud(pairing_path, bundle_id, log_cb, ctx, out_pid, out_error)
+    }));
+    match res {
+        Ok(rc) => rc,
+        Err(e) => {
+            if !out_error.is_null() {
+                *out_error = ffi_util::cstr(format!("Rust panic in al_launch_app_with_hud: {e:?}"));
+            }
+            1
+        }
+    }
+}
+
 /// Trigger device restart / respring via Diagnostics Relay over the pairing tunnel.
 /// Returns 0 on success, 1 on error.
 #[no_mangle]

@@ -191,6 +191,16 @@ int32_t al_list_apps(const char *pairing_path,
                      char **out_json,
                      char **out_error);
 
+// Launch an installed app with MTL_HUD_ENABLED=1 through CoreDevice's
+// com.apple.coredevice.appservice (RSD tunnel, developer mode required).
+// Blocks until the process is spawned. Returns 0 on success with *out_pid set.
+int32_t al_launch_app_with_hud(const char *pairing_path,
+                               const char *bundle_id,
+                               ALLogCallback log_cb,
+                               void *ctx,
+                               uint32_t *out_pid,
+                               char **out_error);
+
 // Restart device / respring via Diagnostics Relay over the pairing tunnel.
 // Blocks until sent. Returns 0 on success.
 int32_t al_device_respring(const char *pairing_path,

@@ -768,6 +768,27 @@ enum HUDEngine {
         return .success(())
     }
 
+    /// Launch an installed app with `MTL_HUD_ENABLED=1` through CoreDevice's
+    /// `com.apple.coredevice.appservice` (the on-device equivalent of
+    /// `devicectl device process launch --env`). No reboot, no defaults change.
+    static func launchWithHUD(_ app: InstalledApp, pairingPath: String) -> Result<UInt32, HUDFailure> {
+        applyStoredTargetHost()
+        var pid: UInt32 = 0
+        var outError: UnsafeMutablePointer<CChar>?
+        let rc = pairingPath.withCString { p in
+            app.bundleID.withCString { b in
+                al_launch_app_with_hud(p, b, alLogBridge, nil, &pid, &outError)
+            }
+        }
+        defer { if let e = outError { al_string_free(e) } }
+
+        if rc != 0 {
+            let message = outError.map { String(cString: $0) } ?? "launch failed (rc=\(String(describing: rc)))"
+            return .failure(HUDFailure(message: message))
+        }
+        return .success(pid)
+    }
+
     /// Ask Diagnostics Relay to restart the device so cfprefsd reloads the
     /// preferences files from disk.
     static func rebootDevice(pairingPath: String) -> Result<Void, HUDFailure> {

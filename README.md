@@ -62,7 +62,8 @@ MetalHudEnabled         # 同上
 | 功能 | 说明 |
 |---|---|
 | **HUD 自检** | App 内用 Metal 画一个旋转三角形，并用 `MTL_HUD_ENABLED=1` 给**本进程**打开 HUD。右上角出现 FPS 叠加层 = 这台设备的 HUD 本身可用 |
-| **按 App 开启（推荐）** | 列出已安装 App → 选中游戏 → 把三个键写进它的 `Library/Preferences/<bundle-id>.plist`（保留该 App 原有 defaults） |
+| **启动并显示 HUD（免重启）** | 通过 CoreDevice 的 `com.apple.coredevice.appservice`，用 `MTL_HUD_ENABLED=1` 直接启动目标 App（等价于 `devicectl process launch --env`），不重启、不改 defaults。**iOS 上优先试这个** |
+| **按 App 开启** | 列出已安装 App → 选中游戏 → 把三个键写进它的 `Library/Preferences/<bundle-id>.plist`（保留该 App 原有 defaults） |
 | **全局域（实验）** | 读写 `.GlobalPreferences.plist`（经典 tweak 路线，对 App Store App 不一定有效） |
 | **诊断** | 设备型号/iOS 版本、上次写入时间、**写后是否重启过**、cfprefsd 当前值 |
 | **cfprefsd 重载探测** | 绕过 cfprefsd 改本 App 自己的 plist 再读回来，判断它是否感知外部修改——决定"强退重开"够不够，还是必须重启 |
@@ -107,6 +108,7 @@ MetalUHD-iOS/
 | `al_exploit_read_file_to_path(pairing, dir, leaf, out_path, …)` | 读出原始字节存到 App 沙箱。底层是"搬出 → AFC 读 → 写回"，但**只要读到字节就一定写回**（重试 3 次；真读不出来时把文件留在 Media 并报告位置，绝不删除） |
 | `al_exploit_write_file(pairing, dir, leaf, local_path, …)` | 按**精确文件名**写单个文件（点文件不跳过），复用已验证的 `exploit_write_single_file` 管线，失败重试 3 次 |
 | `al_list_apps(pairing, …)` | 通过 InstallationProxy 列出用户 App：`bundle_id` / `name` / `container` / `version`（JSON） |
+| `al_launch_app_with_hud(pairing, bundle_id, …)` | 通过 RSD 隧道连 `com.apple.coredevice.appservice`，带 `MTL_HUD_ENABLED=1` 启动目标 App（CoreDevice 的 `launchapplication`） |
 
 `read_file_hash`（回读校验）沿用原项目。
 
@@ -165,9 +167,12 @@ IPA 是刻意**不签名**的，用你平时签 AirliftSilence 的工具（AltSt
    这一步是为了清掉 cfprefsd 里目标 App 的旧缓存——先写后重启的话，
    重启过程中缓存可能把外部写入覆盖回去。
 4. **不要打开游戏**。在 MetalUHD 里点 **加载已安装 App**，搜索并选中游戏。
-5. 点 **为这个 App 开启**。等它跑完：一次运行要几十秒（读 + 写 + 回读校验）。
-6. 看结果：`write verified`（SHA-256 一致），`cfprefsd view (<bundle>): true` 说明守护进程也认了。
-7. 现在再打开游戏 —— HUD 应出现在右上角。
+5. **先点「启动并显示 HUD（免重启）」** —— 它用 CoreDevice 带 `MTL_HUD_ENABLED=1` 启动游戏，
+   不重启也不改 defaults。成功的话游戏右上角直接出现 HUD。
+6. 如果这一步失败（日志里 `coredevice appservice published: false` 或 `launchapplication failed`），
+   再走 defaults 路线：点 **为这个 App 开启**，等 `write verified` + `cfprefsd view (<bundle>): true`，
+   然后打开游戏。
+7. HUD 应出现在右上角。
 
 想关掉：选中同一个 App → **关闭**，推荐同样按「重启 → 写入 → 再开游戏」的顺序。
 
@@ -210,7 +215,9 @@ IPA 是刻意**不签名**的，用你平时签 AirliftSilence 的工具（AltSt
 - 生效需要**重启**（cfprefsd 缓存）；没有找到在设备上无重启刷新 cfprefsd 的办法。
 - HUD 只在 **Metal 渲染**的 App 里出现；不是所有游戏都支持。
 - Apple 文档说 iOS 上 HUD 只对**开发签名/TestFlight** 的 App 生效；自检页能出 HUD 也印证了这一点。
-  App Store 游戏如果按上面的顺序仍不认 defaults，只能走电脑端 DVT 的 `MTL_HUD_ENABLED` 注入。
+  所以 App Store 游戏**不要指望 defaults 路线**，优先用「启动并显示 HUD（免重启）」。
+- CoreDevice 的 `launchapplication` 在部分 iOS 版本/设备上可能要求开发者镜像（DDI）已挂载；
+  若日志显示 `coredevice appservice published: false` 或 `ServiceNotFound`，就只能走电脑端 DVT 路线。
 - 写 App 容器属于设备端修改，App 内做了备份与校验，但仍建议先用非主力机验证。
 - `rust-core/vendor/` 是上游 vendored 依赖，体积较大且包含与本 demo 无关的 FFI（`passthm`、zip、syslog 等），保留是为了少改动。
 

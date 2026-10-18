@@ -76,3 +76,5 @@
 "4. Now open the game — the HUD should appear." = "4. Now open the game — the HUD should appear.";
 "If Check still shows false after this, the app may not honour HUD defaults on iOS; that case needs the desktop DVT/MTL_HUD_ENABLED route." = "If Check still shows false after this, the app may not honour HUD defaults on iOS; that case needs the desktop DVT/MTL_HUD_ENABLED route.";
 "Recommended order: reboot → write → launch the game." = "Recommended order: reboot → write → launch the game.";
+"Launch with HUD (no reboot)" = "Launch with HUD (no reboot)";
+"Launches the app with MTL_HUD_ENABLED=1 through CoreDevice — no reboot and no defaults change. Try this first on iOS; the defaults route below is the fallback." = "Launches the app with MTL_HUD_ENABLED=1 through CoreDevice — no reboot and no defaults change. Try this first on iOS; the defaults route below is the fallback.";

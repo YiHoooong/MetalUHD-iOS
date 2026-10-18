@@ -462,6 +462,31 @@ pub unsafe extern "C" fn al_find_app_container(
     }
 }
 
+/// List user-installed apps over InstallationProxy. `*out_json` is a heap JSON
+/// array of `{bundle_id, name, container, version}` to free with al_string_free().
+/// Returns 0 on success, 1 on error (with out_error set).
+#[no_mangle]
+pub unsafe extern "C" fn al_list_apps(
+    pairing_path: *const c_char,
+    log_cb: exploit::ALLogCallback,
+    ctx: *mut c_void,
+    out_json: *mut *mut c_char,
+    out_error: *mut *mut c_char,
+) -> i32 {
+    let res = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        exploit::list_apps(pairing_path, log_cb, ctx, out_json, out_error)
+    }));
+    match res {
+        Ok(rc) => rc,
+        Err(e) => {
+            if !out_error.is_null() {
+                *out_error = ffi_util::cstr(format!("Rust panic in al_list_apps: {e:?}"));
+            }
+            1
+        }
+    }
+}
+
 /// Trigger device restart / respring via Diagnostics Relay over the pairing tunnel.
 /// Returns 0 on success, 1 on error.
 #[no_mangle]

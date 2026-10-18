@@ -1,0 +1,3 @@
+/* English (development language) */
+"CFBundleDisplayName" = "MetalUHD";
+"NSLocalNetworkUsageDescription" = "MetalUHD needs Local Network access: it advertises a pairing service so this iPhone can pair with itself, then talks to the device's own services over a loopback tunnel to edit the preferences files.";

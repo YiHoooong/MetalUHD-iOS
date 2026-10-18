@@ -1,4 +1,5 @@
 import Foundation
+import UIKit
 import SwiftUI
 import UserNotifications
 
@@ -43,7 +44,7 @@ enum PinNotifier {
 
 // MARK: - View model
 
-/// Screen state plus the one place a run is serialised.
+/// Screen state plus the one place a device run is serialised.
 ///
 /// There is exactly one instance because the device tolerates a single exploit
 /// session at a time and because the log sink is shared with the FFI callbacks.
@@ -66,14 +67,30 @@ final class HUDViewModel: ObservableObject {
     /// The pairing file on disk, for the share sheet. Nil until one exists.
     @Published var pairingFileURL: URL?
 
+    // Per-app HUD support.
+    @Published var apps: [InstalledApp] = []
+    @Published var appsLoaded = false
+    @Published var selectedBundleID: String? = nil
+    @Published var appFilter = ""
+
+    // Diagnostics.
+    @Published var lastWriteAt: Date? = HUDViewModel.storedLastWrite
+    @Published var lastAppTarget: String = ""
+
     private var drainTimer: Timer?
     /// The last URL handed to `adoptPairingFile`, so a share-sheet open that is
     /// delivered twice (app delegate + SwiftUI's onOpenURL) only imports once.
     private var lastAdoption: (path: String, at: Date)?
-    /// The tail of the run queue. A Shortcut and the view's automatic check can
-    /// arrive at the same moment.
+    /// The tail of the run queue.
     private var chain: Task<HUDOutcome, Never>?
     private var queued = 0
+
+    private static let lastWriteKey = "metaluhdLastWrite"
+
+    private static var storedLastWrite: Date? {
+        let t = UserDefaults.standard.double(forKey: lastWriteKey)
+        return t > 0 ? Date(timeIntervalSince1970: t) : nil
+    }
 
     private init() {
         deviceIP = HUDEngine.storedTargetHost
@@ -98,6 +115,48 @@ final class HUDViewModel: ObservableObject {
 
     var hasBackup: Bool {
         FileManager.default.fileExists(atPath: HUDEngine.backupURL.path)
+    }
+
+    var selectedApp: InstalledApp? {
+        guard let id = selectedBundleID else { return nil }
+        return apps.first { $0.bundleID == id }
+    }
+
+    var filteredApps: [InstalledApp] {
+        let query = appFilter.trimmingCharacters(in: .whitespaces).lowercased()
+        guard !query.isEmpty else { return apps }
+        return apps.filter {
+            $0.name.lowercased().contains(query) || $0.bundleID.lowercased().contains(query)
+        }
+    }
+
+    // MARK: diagnostics
+
+    /// The iOS version and model, for the diagnostics card.
+    var deviceDescription: String {
+        "iOS \(UIDevice.current.systemVersion) · \(UIDevice.current.model)"
+    }
+
+    /// Whether the device has been rebooted since the last successful write.
+    /// cfprefsd only re-reads the preferences files at boot, so this is the
+    /// key check after a write.
+    var rebootedSinceWrite: Bool? {
+        guard let date = lastWriteAt else { return nil }
+        let bootTime = Date().timeIntervalSince1970 - ProcessInfo.processInfo.systemUptime
+        return bootTime > date.timeIntervalSince1970
+    }
+
+    var lastWriteDescription: String {
+        guard let date = lastWriteAt else { return "never" }
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MM-dd HH:mm:ss"
+        return formatter.string(from: date)
+    }
+
+    private func recordWrite() {
+        let now = Date()
+        lastWriteAt = now
+        UserDefaults.standard.set(now.timeIntervalSince1970, forKey: Self.lastWriteKey)
     }
 
     // MARK: pairing file
@@ -128,9 +187,32 @@ final class HUDViewModel: ObservableObject {
 
     // MARK: runs
 
-    /// Runs one action and waits for its outcome.
+    /// Runs one global action and waits for its outcome.
     @discardableResult
     func run(_ action: HUDAction) async -> HUDOutcome {
+        await enqueue(action.title) { pairingPath in
+            HUDEngine.run(action, pairingPath: pairingPath)
+        }
+    }
+
+    /// Runs one per-app action.
+    @discardableResult
+    func runForApp(_ app: InstalledApp, enabled: Bool) async -> HUDOutcome {
+        let title = "\(enabled ? "Enable" : "Disable") · \(app.name)"
+        return await enqueue(title) { pairingPath in
+            HUDEngine.applyForApp(app, enabled: enabled, pairingPath: pairingPath)
+        }
+    }
+
+    @discardableResult
+    func checkForApp(_ app: InstalledApp) async -> HUDOutcome {
+        await enqueue("Check · \(app.name)") { pairingPath in
+            HUDEngine.checkApp(app, pairingPath: pairingPath)
+        }
+    }
+
+    private func enqueue(_ label: String,
+                         _ work: @escaping @Sendable (String) -> HUDOutcome) async -> HUDOutcome {
         let previous = chain
         queued += 1
         busy = true
@@ -138,15 +220,23 @@ final class HUDViewModel: ObservableObject {
         let task = Task { @MainActor in
             defer { self.finishQueuedRun() }
             _ = await previous?.value
-            return await self.execute(action)
+            return await self.execute(label, work)
         }
         chain = task
         return await task.value
     }
 
-    /// Fire-and-forget, for buttons.
+    /// Fire-and-forget wrappers for buttons.
     func request(_ action: HUDAction) {
         Task { await run(action) }
+    }
+
+    func requestForApp(_ app: InstalledApp, enabled: Bool) {
+        Task { await runForApp(app, enabled: enabled) }
+    }
+
+    func requestCheckForApp(_ app: InstalledApp) {
+        Task { await checkForApp(app) }
     }
 
     func check() { request(.check) }
@@ -159,9 +249,10 @@ final class HUDViewModel: ObservableObject {
         if queued == 0 { busy = false }
     }
 
-    private func execute(_ action: HUDAction) async -> HUDOutcome {
-        stage = action.title
-        append("── \(action.title) ──")
+    private func execute(_ label: String,
+                         _ work: @escaping @Sendable (String) -> HUDOutcome) async -> HUDOutcome {
+        stage = label
+        append("── \(label) ──")
 
         // Resolved on the main actor before the job: PairingController is
         // @MainActor, so the background work must not call into it.
@@ -170,7 +261,7 @@ final class HUDViewModel: ObservableObject {
         startDraining()
 
         let outcome = await Task.detached(priority: .userInitiated) {
-            HUDEngine.run(action, pairingPath: pairingPath)
+            work(pairingPath)
         }.value
 
         stopDraining()
@@ -181,13 +272,54 @@ final class HUDViewModel: ObservableObject {
         state = outcome.state
         cfprefsdSees = outcome.cfprefsdSees
         writeVerified = outcome.writeVerified
+        if outcome.ok, outcome.action == .enable || outcome.action == .disable {
+            recordWrite()
+        }
+        if outcome.appPrefsPath != nil {
+            lastAppTarget = outcome.target
+        }
         return outcome
+    }
+
+    // MARK: app list
+
+    /// Loads the installed-app list over InstallationProxy. This is a device
+    /// session of its own, so it waits for any queued run to finish.
+    func loadApps() {
+        guard !busy else { return }
+        busy = true
+        stage = "Loading installed apps…"
+        append("── Loading installed apps ──")
+
+        Task {
+            _ = await chain?.value
+            let pairingPath = PairingController.pairingFilePath()
+            startDraining()
+            let result = await Task.detached(priority: .userInitiated) {
+                HUDEngine.listApps(pairingPath: pairingPath)
+            }.value
+            stopDraining()
+
+            switch result {
+            case let .success(list):
+                apps = list
+                appsLoaded = true
+                if selectedBundleID == nil || !list.contains(where: { $0.bundleID == selectedBundleID }) {
+                    selectedBundleID = list.first?.bundleID
+                }
+                append("Found \(list.count) installed app(s)")
+            case let .failure(f):
+                append("✗ App list failed: \(f.message)")
+            }
+            stage = ""
+            busy = false
+        }
     }
 
     // MARK: reboot
 
     /// Ask Diagnostics Relay to restart the device. A reboot is what makes the
-    /// edited global domain visible to every process (cfprefsd caches it).
+    /// edited preferences visible to every process (cfprefsd caches them).
     func reboot() {
         guard !busy else { return }
         busy = true
@@ -202,7 +334,7 @@ final class HUDViewModel: ObservableObject {
             switch result {
             case .success:
                 append("✅ Restart requested. The device will reboot in a few seconds.")
-                append("After it comes back, open any Metal app (a game) and look for the HUD in the top-right corner.")
+                append("After it comes back, force-quit and relaunch the target app.")
             case let .failure(f):
                 append("✗ Reboot failed: \(f.message)")
                 append("You can also reboot from Settings › General › Shut Down.")

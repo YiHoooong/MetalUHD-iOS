@@ -182,6 +182,15 @@ int32_t al_find_app_container(const char *pairing_path,
                              char **out_container,
                              char **out_error);
 
+// List user-installed apps over InstallationProxy.
+// `*out_json` is a heap JSON array of {bundle_id, name, container, version};
+// release it with al_string_free(). Blocks — run off the main thread.
+int32_t al_list_apps(const char *pairing_path,
+                     ALLogCallback log_cb,
+                     void *ctx,
+                     char **out_json,
+                     char **out_error);
+
 // Restart device / respring via Diagnostics Relay over the pairing tunnel.
 // Blocks until sent. Returns 0 on success.
 int32_t al_device_respring(const char *pairing_path,

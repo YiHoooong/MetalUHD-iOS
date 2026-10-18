@@ -1,0 +1,3 @@
+/* 简体中文 */
+"CFBundleDisplayName" = "MetalUHD";
+"NSLocalNetworkUsageDescription" = "MetalUHD 需要局域网权限：它要广播一个配对服务，让这台 iPhone 与自身配对，然后通过回环隧道读写设备上的偏好文件。";

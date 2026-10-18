@@ -47,3 +47,13 @@
 "Version" = "版本";
 "connected" = "已连接";
 "offline" = "未连接";
+"Top right" = "右上";
+"Top left" = "左上";
+"Top center" = "上中";
+"Center left" = "中左";
+"Center" = "居中";
+"Center right" = "中右";
+"Bottom left" = "左下";
+"Bottom center" = "下中";
+"Bottom right" = "右下";
+"Scale is a fraction of the game's drawable width (Apple default 0.2, minimum 300 px). The HUD follows the game's render resolution, so it can look soft. Position is where the overlay sits inside the game's drawable." = "缩放是游戏 drawable 宽度的比例（Apple 默认 0.2，最小 300px）。HUD 按游戏渲染分辨率绘制，所以可能发虚。位置是叠加层在游戏 drawable 里的落点。";

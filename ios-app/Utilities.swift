@@ -155,14 +155,15 @@ enum LocalDevVPN {
 // MARK: - List helpers
 
 extension View {
-    /// Lets an inset-grouped List row's separator span the whole card instead
-    /// of being inset to the content. The row content is already inset by 16
-    /// points inside the card, so the guides reach 16 points outwards on both
-    /// sides. Without this, rows that start with an icon drew a shorter line
-    /// than plain text rows.
-    func cardWidthListSeparator() -> some View {
+    /// Gives a List row the standard content inset while leaving the cell's own
+    /// insets at zero. The system then draws the separator across the whole
+    /// card instead of stopping at the text inset. Applying alignment guides to
+    /// the row content cannot do this: their trailing value is the content
+    /// width, which is why that attempt drew half-width lines.
+    func cardRow() -> some View {
         self
-            .alignmentGuide(.listRowSeparatorLeading) { _ in -16 }
-            .alignmentGuide(.listRowSeparatorTrailing) { dimensions in dimensions[.trailing] + 16 }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 11)
+            .listRowInsets(EdgeInsets())
     }
 }

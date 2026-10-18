@@ -28,7 +28,7 @@ struct LogView: View {
                         Text(line)
                             .font(.system(size: 10, design: .monospaced))
                             .foregroundColor(line.hasPrefix("✗") ? .red : .secondary)
-                            .cardWidthListSeparator()
+                            .cardRow()
                     }
                 } header: {
                     Text("Log")
@@ -48,7 +48,7 @@ struct LogView: View {
 
     @ViewBuilder
     private func row<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
-        content().cardWidthListSeparator()
+        content().cardRow()
     }
 
     private var vpnDescription: String {

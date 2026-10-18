@@ -47,3 +47,13 @@
 "Version" = "Version";
 "connected" = "connected";
 "offline" = "offline";
+"Top right" = "Top right";
+"Top left" = "Top left";
+"Top center" = "Top center";
+"Center left" = "Center left";
+"Center" = "Center";
+"Center right" = "Center right";
+"Bottom left" = "Bottom left";
+"Bottom center" = "Bottom center";
+"Bottom right" = "Bottom right";
+"Scale is a fraction of the game's drawable width (Apple default 0.2, minimum 300 px). The HUD follows the game's render resolution, so it can look soft. Position is where the overlay sits inside the game's drawable." = "Scale is a fraction of the game's drawable width (Apple default 0.2, minimum 300 px). The HUD follows the game's render resolution, so it can look soft. Position is where the overlay sits inside the game's drawable.";

@@ -19,6 +19,19 @@ struct SettingsView: View {
         return types
     }()
 
+    static let alignments: [(code: String, label: String)] = [
+        ("default", "System default"),
+        ("tr", "Top right"),
+        ("tl", "Top left"),
+        ("tc", "Top center"),
+        ("cl", "Center left"),
+        ("c", "Center"),
+        ("cr", "Center right"),
+        ("bl", "Bottom left"),
+        ("bc", "Bottom center"),
+        ("br", "Bottom right"),
+    ]
+
     private var versionDescription: String {
         let info = Bundle.main.infoDictionary
         let short = info?["CFBundleShortVersionString"] as? String ?? "?"
@@ -66,10 +79,11 @@ struct SettingsView: View {
         }
     }
 
-    /// Every row goes through this so the separator spans the card.
+    /// Every row goes through this: the content keeps the standard 16pt inset
+    /// while the row insets are zero, so the separator spans the whole card.
     @ViewBuilder
     private func row<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
-        content().cardWidthListSeparator()
+        content().cardRow()
     }
 
     // MARK: pairing
@@ -170,8 +184,8 @@ struct SettingsView: View {
 
             row {
                 Picker("Alignment", selection: $vm.hudAlignment) {
-                    ForEach(["default", "tr", "tl", "tc", "cl", "c", "cr", "bl", "bc", "br"], id: \.self) { value in
-                        Text(LocalizedStringKey(value == "default" ? "System default" : value))
+                    ForEach(Self.alignments, id: \.code) { choice in
+                        Text(LocalizedStringKey(choice.label)).tag(choice.code)
                     }
                 }
             }
@@ -186,7 +200,7 @@ struct SettingsView: View {
         } header: {
             Text("HUD")
         } footer: {
-            Text("Scale is a fraction of the game's drawable width (Apple default 0.2, minimum 300 px). The HUD follows the game's render resolution, so it can look soft. Alignment codes: tr/tl/tc/cl/c/cr/bl/bc/br.")
+            Text(LocalizedStringKey("Scale is a fraction of the game's drawable width (Apple default 0.2, minimum 300 px). The HUD follows the game's render resolution, so it can look soft. Position is where the overlay sits inside the game's drawable."))
         }
     }
 

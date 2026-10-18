@@ -91,13 +91,13 @@ CI 会把 **`MetalUHD.ipa` 作为 GitHub Release 资产**发布（不是 zip art
 
 ```sh
 # 直接下载 .ipa
-gh release download v0.8.2 -R YiHoooong/MetalUHD-iOS -p MetalUHD.ipa -O MetalUHD.ipa
+gh release download v0.8.3 -R YiHoooong/MetalUHD-iOS -p MetalUHD.ipa -O MetalUHD.ipa
 ```
 
 浏览器（私有仓库需登录）：
 
 ```
-https://github.com/YiHoooong/MetalUHD-iOS/releases/download/v0.8.2/MetalUHD.ipa
+https://github.com/YiHoooong/MetalUHD-iOS/releases/download/v0.8.3/MetalUHD.ipa
 ```
 
 Mac 上手动构建：
@@ -126,7 +126,7 @@ IPA 是**未签名**的，用你平时签 AirliftSilence 的工具签名。
 「设置 → HUD 选项」可以调：
 
 - **缩放**：留空 = Apple 默认 0.2；建议 `0.3`–`0.4`；
-- **位置**：`tr`（右上）/ `tl` / `tc` / `cl` / `c` / `cr` / `bl` / `bc` / `br`。
+- **位置**：中文选项（右上 / 左上 / 上中 / 中左 / 居中 / 中右 / 左下 / 下中 / 右下），默认系统 = 右上。
 
 ---
 

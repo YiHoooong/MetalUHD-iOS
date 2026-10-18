@@ -75,6 +75,10 @@ final class HUDViewModel: ObservableObject {
     // Diagnostics.
     @Published var lastLaunchAt: Date? = HUDViewModel.storedLastLaunch
 
+    // LocalDevVPN state.
+    @Published var vpnConnected: Bool? = nil
+    @Published var showVPNAlert = false
+
     private var drainTimer: Timer?
     /// The last URL handed to `adoptPairingFile`, so a share-sheet open that is
     /// delivered twice (app delegate + SwiftUI's onOpenURL) only imports once.
@@ -165,15 +169,17 @@ final class HUDViewModel: ObservableObject {
 
     // MARK: app list
 
-    /// Loads the installed-app list over InstallationProxy.
+    /// Loads the installed-app list over InstallationProxy. LocalDevVPN must be
+    /// up first; if it is not, show the Open-VPN prompt instead of spinning.
     func loadApps() {
         guard !busy else { return }
-        busy = true
-        stage = "Loading installed apps…"
-        append("── Loading installed apps ──")
-
-        let pairingPath = PairingController.pairingFilePath()
         Task {
+            guard await ensureVPN() else { return }
+            busy = true
+            stage = "Loading installed apps…"
+            append("── Loading installed apps ──")
+
+            let pairingPath = PairingController.pairingFilePath()
             startDraining()
             let result = await Task.detached(priority: .userInitiated) {
                 HUDEngine.listApps(pairingPath: pairingPath)
@@ -186,8 +192,6 @@ final class HUDViewModel: ObservableObject {
                 appsLoaded = true
                 append("Found \(list.count) installed app(s)")
 
-                // Icons come from SpringBoardServices; one extra RSD session for
-                // the whole batch.
                 stage = "Loading app icons…"
                 let dir = iconCacheDir
                 let iconResult = await Task.detached(priority: .utility) {
@@ -222,20 +226,21 @@ final class HUDViewModel: ObservableObject {
     /// No reboot, no defaults edit.
     func launchWithHUD(_ app: InstalledApp) {
         guard !busy else { return }
-        busy = true
-        stage = "Launching \(app.name)…"
-        append("── Launch with HUD: \(app.name) ──")
-
-        let pairingPath = PairingController.pairingFilePath()
-        let rawScale = hudScale.trimmingCharacters(in: .whitespaces)
-        let scale = rawScale.isEmpty ? 0.0 : min(max(Double(rawScale) ?? 0.0, 0.1), 1.0)
-        let alignment = hudAlignment == "default" ? "" : hudAlignment
-        // MTL_HUD_ELEMENTS is not supported by this iOS build; never send it.
-        let elements = ""
-        UserDefaults.standard.set(hudScale, forKey: "metaluhdScale")
-        UserDefaults.standard.set(hudAlignment, forKey: "metaluhdAlignment")
-
         Task {
+            guard await ensureVPN() else { return }
+            busy = true
+            stage = "Launching \(app.name)…"
+            append("── Launch with HUD: \(app.name) ──")
+
+            let pairingPath = PairingController.pairingFilePath()
+            let rawScale = hudScale.trimmingCharacters(in: .whitespaces)
+            let scale = rawScale.isEmpty ? 0.0 : min(max(Double(rawScale) ?? 0.0, 0.1), 1.0)
+            let alignment = hudAlignment == "default" ? "" : hudAlignment
+            // MTL_HUD_ELEMENTS is not supported by this iOS build; never send it.
+            let elements = ""
+            UserDefaults.standard.set(hudScale, forKey: "metaluhdScale")
+            UserDefaults.standard.set(hudAlignment, forKey: "metaluhdAlignment")
+
             let result = await Task.detached(priority: .userInitiated) {
                 HUDEngine.launchWithHUD(app, pairingPath: pairingPath,
                                         scale: scale,
@@ -257,6 +262,31 @@ final class HUDViewModel: ObservableObject {
             stage = ""
             busy = false
         }
+    }
+
+    // MARK: LocalDevVPN
+
+    /// Refreshes the VPN indicator (used by the status card and on appear).
+    func refreshVPNStatus() {
+        let host = deviceIP
+        Task {
+            vpnConnected = await HUDEngine.isLocalDevVPNRunning(host: host)
+        }
+    }
+
+    /// Blocks the device action when the loopback tunnel is down and asks the
+    /// user to open LocalDevVPN instead of spinning into a generic failure.
+    private func ensureVPN() async -> Bool {
+        let ok = await HUDEngine.isLocalDevVPNRunning(host: deviceIP)
+        vpnConnected = ok
+        if !ok {
+            showVPNAlert = true
+        }
+        return ok
+    }
+
+    func openVPN() {
+        LocalDevVPN.open()
     }
 
     // MARK: plumbing

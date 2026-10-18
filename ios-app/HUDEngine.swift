@@ -1,4 +1,5 @@
 import Foundation
+import Network
 import AirliftFFI
 
 // MARK: - State
@@ -108,6 +109,54 @@ enum HUDEngine {
     }
 
     static func applyStoredTargetHost() { applyTargetHost(storedTargetHost) }
+
+    // MARK: - LocalDevVPN probe
+
+    /// True when the loopback tunnel gateway accepts a TCP connection on the
+    /// RSD port. LocalDevVPN has to be running in loopback mode for any device
+    /// operation to work, so the UI checks this before spinning up a session.
+    static func isLocalDevVPNRunning(host: String, port: UInt16 = 49152,
+                                     timeout: TimeInterval = 0.8) async -> Bool {
+        await withCheckedContinuation { continuation in
+            guard let nwPort = NWEndpoint.Port(rawValue: port) else {
+                continuation.resume(returning: false)
+                return
+            }
+            let connection = NWConnection(host: NWEndpoint.Host(host),
+                                          port: nwPort,
+                                          using: .tcp)
+            let lock = NSLock()
+            var finished = false
+            let finish: (Bool) -> Void = { value in
+                lock.lock()
+                if finished {
+                    lock.unlock()
+                    return
+                }
+                finished = true
+                lock.unlock()
+                connection.cancel()
+                continuation.resume(returning: value)
+            }
+            connection.stateUpdateHandler = { state in
+                switch state {
+                case .ready:
+                    finish(true)
+                case .failed, .cancelled:
+                    finish(false)
+                case .waiting:
+                    // Keep waiting; the timeout below decides.
+                    break
+                default:
+                    break
+                }
+            }
+            connection.start(queue: .global())
+            DispatchQueue.global().asyncAfter(deadline: .now() + timeout) {
+                finish(false)
+            }
+        }
+    }
 
     // MARK: - app list
 

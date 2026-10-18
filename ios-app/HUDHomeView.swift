@@ -1,24 +1,35 @@
 import SwiftUI
 import UIKit
 
-/// The main page: a status line and the installed apps. Tapping an app
-/// force-quits it if needed and launches it with `MTL_HUD_ENABLED=1`.
+/// Home screen: a compact status card and a 4-column grid of installed apps.
+/// Tapping an icon force-quits that app and relaunches it with the HUD on.
 struct HUDHomeView: View {
     @ObservedObject private var vm = HUDViewModel.shared
+
+    private let columns = Array(repeating: GridItem(.flexible(), spacing: 14), count: 4)
 
     var body: some View {
         NavigationView {
             ScrollView {
-                VStack(spacing: 16) {
+                VStack(spacing: 18) {
                     statusCard
-                    appsCard
+                    appsSection
                 }
-                .padding()
+                .padding(.horizontal, 16)
+                .padding(.vertical, 12)
             }
+            .background(Color(.systemGroupedBackground))
             .navigationTitle(AppIdentity.name)
             .navigationBarTitleDisplayMode(.inline)
+            .alert("LocalDevVPN is not running", isPresented: $vm.showVPNAlert) {
+                Button("Open LocalDevVPN") { vm.openVPN() }
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                Text("Open LocalDevVPN (loopback mode) first, then try again.")
+            }
             .onAppear {
                 vm.refreshPairingState()
+                vm.refreshVPNStatus()
                 if vm.pairingReady && !vm.appsLoaded && !vm.busy {
                     vm.loadApps()
                 }
@@ -31,45 +42,61 @@ struct HUDHomeView: View {
     private var statusCard: some View {
         VStack(spacing: 10) {
             Image(systemName: vm.state.symbol)
-                .font(.system(size: 52))
-                .foregroundColor(vm.state == .launched ? .green : .gray)
+                .font(.system(size: 44))
+                .foregroundColor(vm.state == .launched ? .green : .secondary)
             Text(vm.lastSummary.isEmpty ? vm.state.label : vm.lastSummary)
-                .font(.title3.weight(.semibold))
+                .font(.headline)
                 .multilineTextAlignment(.center)
 
             if vm.busy {
                 HStack(spacing: 8) {
                     ProgressView()
-                    Text(vm.stage).foregroundColor(.secondary)
+                    Text(vm.stage)
+                        .foregroundColor(.secondary)
+                        .lineLimit(1)
                 }
                 .font(.subheadline)
             } else {
-                Text("Tap an app to launch it with the Metal HUD.")
-                    .font(.footnote)
-                    .foregroundColor(.secondary)
-                    .multilineTextAlignment(.center)
+                vpnPill
             }
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 22)
-        .background(Color(.secondarySystemBackground))
-        .cornerRadius(16)
+        .padding(.vertical, 20)
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+    }
+
+    private var vpnPill: some View {
+        Button {
+            if vm.vpnConnected == false { vm.openVPN() }
+        } label: {
+            HStack(spacing: 6) {
+                Circle()
+                    .fill(vm.vpnConnected == true ? Color.green : Color.red)
+                    .frame(width: 7, height: 7)
+                Text(LocalizedStringKey(vm.vpnConnected == true ? "LocalDevVPN connected" : "LocalDevVPN offline"))
+                    .font(.caption2)
+                    .foregroundColor(.secondary)
+            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 4)
+            .background(Color(.secondarySystemGroupedBackground), in: Capsule())
+        }
+        .buttonStyle(.plain)
     }
 
     // MARK: apps
 
-    private var appsCard: some View {
-        VStack(alignment: .leading, spacing: 10) {
+    private var appsSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
             HStack {
-                Image(systemName: "square.grid.2x2.fill")
-                    .foregroundColor(.blue)
                 Text("Installed apps")
-                    .font(.subheadline.weight(.medium))
+                    .font(.headline)
                 Spacer()
                 Button {
                     vm.loadApps()
                 } label: {
                     Image(systemName: "arrow.clockwise")
+                        .font(.subheadline.weight(.semibold))
                 }
                 .buttonStyle(.bordered)
                 .controlSize(.small)
@@ -97,42 +124,33 @@ struct HUDHomeView: View {
                     .autocapitalization(.none)
                     .disableAutocorrection(true)
 
-                VStack(spacing: 2) {
+                LazyVGrid(columns: columns, alignment: .leading, spacing: 18) {
                     ForEach(vm.filteredApps) { app in
                         Button {
                             vm.launchWithHUD(app)
                         } label: {
-                            HStack(spacing: 12) {
+                            VStack(spacing: 6) {
                                 icon(for: app)
-                                    .frame(width: 36, height: 36)
-                                    .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text(app.name)
-                                        .font(.subheadline)
-                                        .foregroundColor(.primary)
-                                    Text(app.bundleID)
-                                        .font(.caption2)
-                                        .foregroundColor(.secondary)
-                                        .lineLimit(1)
-                                }
-                                Spacer()
-                                Image(systemName: "play.circle.fill")
-                                    .font(.title3)
-                                    .foregroundColor(.accentColor)
+                                    .frame(width: 62, height: 62)
+                                    .clipShape(RoundedRectangle(cornerRadius: 15, style: .continuous))
+                                Text(app.name)
+                                    .font(.caption2)
+                                    .foregroundColor(.primary)
+                                    .lineLimit(1)
+                                    .truncationMode(.tail)
+                                    .frame(maxWidth: .infinity)
                             }
                             .contentShape(Rectangle())
-                            .padding(.vertical, 7)
-                            .padding(.horizontal, 8)
                         }
                         .buttonStyle(.plain)
                         .disabled(vm.busy)
                     }
                 }
+                .padding(.top, 4)
             }
         }
-        .padding(12)
-        .background(Color(.secondarySystemBackground))
-        .cornerRadius(12)
+        .padding(14)
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
     }
 
     @ViewBuilder
@@ -146,9 +164,9 @@ struct HUDHomeView: View {
             Image(systemName: "app.fill")
                 .resizable()
                 .scaledToFit()
-                .padding(4)
+                .padding(9)
                 .foregroundColor(.secondary)
-                .background(Color(.tertiarySystemBackground))
+                .background(Color(.secondarySystemGroupedBackground))
         }
     }
 }

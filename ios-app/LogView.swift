@@ -1,18 +1,37 @@
 import SwiftUI
 
-/// Diagnostics and the raw run log.
+/// Diagnostics and the raw run log, in a native grouped list.
 struct LogView: View {
     @ObservedObject private var vm = HUDViewModel.shared
 
     var body: some View {
         NavigationView {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 14) {
-                    diagnosticsCard
-                    logCard
+            List {
+                Section {
+                    LabeledContent("Device", value: vm.deviceDescription)
+                    LabeledContent("Last launch", value: vm.lastLaunchDescription)
+                    LabeledContent("Pairing", value: vm.pairingReady ? "ready" : "missing")
+                    LabeledContent("LocalDevVPN", value: vpnDescription)
+                } header: {
+                    Text("Diagnostics")
                 }
-                .padding()
+
+                Section {
+                    if vm.log.isEmpty {
+                        Text("No log yet.")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                    ForEach(Array(vm.log.enumerated()), id: \.offset) { _, line in
+                        Text(line)
+                            .font(.system(size: 10, design: .monospaced))
+                            .foregroundColor(line.hasPrefix("✗") ? .red : .secondary)
+                    }
+                } header: {
+                    Text("Log")
+                }
             }
+            .listStyle(.insetGrouped)
             .navigationTitle("Log")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -20,48 +39,15 @@ struct LogView: View {
                     Button("Clear") { vm.log.removeAll() }
                 }
             }
+            .onAppear { vm.refreshVPNStatus() }
         }
     }
 
-    private var diagnosticsCard: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text("Diagnostics")
-                .font(.subheadline.weight(.medium))
-            diagnosticRow("Device", vm.deviceDescription)
-            diagnosticRow("Last launch", vm.lastLaunchDescription)
-            diagnosticRow("Pairing", vm.pairingReady ? "ready" : "missing")
-        }
-        .padding(12)
-        .background(Color(.secondarySystemBackground))
-        .cornerRadius(12)
-    }
-
-    private func diagnosticRow(_ name: String, _ value: String) -> some View {
-        HStack(alignment: .top) {
-            Text(LocalizedStringKey(name))
-                .font(.caption)
-                .foregroundColor(.secondary)
-            Spacer()
-            Text(value)
-                .font(.system(.caption, design: .monospaced))
-                .multilineTextAlignment(.trailing)
-        }
-    }
-
-    private var logCard: some View {
-        VStack(alignment: .leading, spacing: 3) {
-            if vm.log.isEmpty {
-                Text("No log yet.")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-            }
-            ForEach(Array(vm.log.enumerated()), id: \.offset) { _, line in
-                Text(line)
-                    .font(.system(size: 10, design: .monospaced))
-                    .foregroundColor(line.hasPrefix("✗") ? .red : .secondary)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-            }
+    private var vpnDescription: String {
+        switch vm.vpnConnected {
+        case .none: return "—"
+        case .some(true): return String(localized: "connected")
+        case .some(false): return String(localized: "offline")
         }
     }
 }

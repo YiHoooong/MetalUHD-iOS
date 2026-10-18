@@ -29,7 +29,8 @@ Apple 文档说 iOS 上 HUD 开关写在 **App 自己的 standard user defaults*
 
 | 功能 | 说明 |
 |---|---|
-| **点击即启动** | 列出已安装 App（图标 + 名字 + bundle id），**点一下**就结束可能正在运行的实例，并带 `MTL_HUD_ENABLED=1` 重新启动它 |
+| **桌面式 App 网格** | 4 列图标 + 名称，点一下图标就结束可能正在运行的实例，并带 `MTL_HUD_ENABLED=1` 重新启动它 |
+| **LocalDevVPN 检测** | 启动/加载前先探测回环网关，没开就弹窗提示去打开，而不是转圈后失败 |
 | **HUD 选项** | 设置页调 `MTL_HUD_SCALE`（缩放，留空 = Apple 默认 0.2）和 `MTL_HUD_ALIGNMENT`（位置），下次启动生效 |
 | **HUD 自检** | 设置页里用 Metal 画一个三角形并在本 App 进程打开 HUD，用来确认设备上 HUD 本身可用 |
 | **配对 / 隧道** | 本机 RPPairing、导入/导出配对文件、LocalDevVPN 回环地址 |
@@ -45,9 +46,9 @@ Apple 文档说 iOS 上 HUD 开关写在 **App 自己的 standard user defaults*
 MetalUHD-iOS/
 ├── ios-app/
 │   ├── ContentView.swift         底栏：HUD / 日志 / 设置
-│   ├── HUDHomeView.swift         状态卡片 + App 列表（点一下即启动）
+│   ├── HUDHomeView.swift         状态卡片 + 4 列 App 网格（点图标即启动）
 │   ├── LogView.swift             诊断 + 运行日志
-│   ├── SettingsView.swift        配对 / HUD 选项 / HUD 自检 / 隧道 / 关于
+│   ├── SettingsView.swift        原生分组列表：配对 / HUD / 隧道 / 关于
 │   ├── HUDViewModel.swift        状态、App 列表与图标、启动
 │   ├── HUDEngine.swift           InstallationProxy 列表 + SpringBoard 图标 + CoreDevice 启动
 │   ├── MetalHUDTest.swift        自带 Metal 渲染器（HUD 自检）
@@ -89,13 +90,13 @@ CI 会把 **`MetalUHD.ipa` 作为 GitHub Release 资产**发布（不是 zip art
 
 ```sh
 # 直接下载 .ipa
-gh release download v0.7.0 -R YiHoooong/MetalUHD-iOS -p MetalUHD.ipa -O MetalUHD.ipa
+gh release download v0.8.0 -R YiHoooong/MetalUHD-iOS -p MetalUHD.ipa -O MetalUHD.ipa
 ```
 
 浏览器（私有仓库需登录）：
 
 ```
-https://github.com/YiHoooong/MetalUHD-iOS/releases/download/v0.7.0/MetalUHD.ipa
+https://github.com/YiHoooong/MetalUHD-iOS/releases/download/v0.8.0/MetalUHD.ipa
 ```
 
 Mac 上手动构建：
@@ -117,8 +118,8 @@ IPA 是**未签名**的，用你平时签 AirliftSilence 的工具签名。
 ## 使用
 
 1. 打开 LocalDevVPN（回环模式），在「设置」页确认配对文件就绪；没有就 Start pairing 或导入。
-2. 回到 **HUD** 页，App 列表会自动加载（也可点右上角刷新）。
-3. **点一下目标游戏** —— 已经在运行会被结束，然后带 HUD 启动。
+2. 回到 **HUD** 页，App 列表会自动加载（也可点右上角刷新）。如果 LocalDevVPN 没开，会直接弹窗提示去打开。
+3. **点一下游戏图标** —— 已经在运行会被结束，然后带 HUD 启动。
 4. 游戏右上角出现 FPS / 帧时间 / GPU 时间面板，**不需要重启设备**。
 
 「设置 → HUD 选项」可以调：

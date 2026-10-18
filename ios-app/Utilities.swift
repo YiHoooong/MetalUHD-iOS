@@ -1,4 +1,5 @@
 import Foundation
+import UIKit
 import AVFAudio
 import Network
 
@@ -133,5 +134,19 @@ final class LocalNetworkAuthorization {
         cont.resume(returning: authorized)
         browser?.cancel(); browser = nil
         listener?.cancel(); listener = nil
+    }
+}
+
+// MARK: - LocalDevVPN helper
+
+enum LocalDevVPN {
+    private static let url = URL(string: "localdevvpn://")!
+
+    static var isInstalled: Bool {
+        UIApplication.shared.canOpenURL(url)
+    }
+
+    static func open() {
+        UIApplication.shared.open(url)
     }
 }

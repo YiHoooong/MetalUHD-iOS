@@ -771,13 +771,19 @@ enum HUDEngine {
     /// Launch an installed app with `MTL_HUD_ENABLED=1` through CoreDevice's
     /// `com.apple.coredevice.appservice` (the on-device equivalent of
     /// `devicectl device process launch --env`). No reboot, no defaults change.
-    static func launchWithHUD(_ app: InstalledApp, pairingPath: String) -> Result<UInt32, HUDFailure> {
+    static func launchWithHUD(_ app: InstalledApp, pairingPath: String,
+                              scale: Double, alignment: String,
+                              elements: String) -> Result<UInt32, HUDFailure> {
         applyStoredTargetHost()
         var pid: UInt32 = 0
         var outError: UnsafeMutablePointer<CChar>?
         let rc = pairingPath.withCString { p in
             app.bundleID.withCString { b in
-                al_launch_app_with_hud(p, b, alLogBridge, nil, &pid, &outError)
+                alignment.withCString { a in
+                    elements.withCString { e in
+                        al_launch_app_with_hud(p, b, scale, a, e, alLogBridge, nil, &pid, &outError)
+                    }
+                }
             }
         }
         defer { if let e = outError { al_string_free(e) } }

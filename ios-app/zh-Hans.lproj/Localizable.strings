@@ -78,3 +78,9 @@
 "Recommended order: reboot → write → launch the game." = "推荐顺序：重启 → 写入 → 再打开游戏。";
 "Launch with HUD (no reboot)" = "启动并显示 HUD（免重启）";
 "Launches the app with MTL_HUD_ENABLED=1 through CoreDevice — no reboot and no defaults change. Try this first on iOS; the defaults route below is the fallback." = "通过 CoreDevice 用 MTL_HUD_ENABLED=1 启动游戏——不用重启，也不改 defaults。iOS 上先试这个；下面的 defaults 路线是备选。";
+"HUD options" = "HUD 选项";
+"HUD scale" = "HUD 缩放";
+"Alignment" = "位置";
+"Layout" = "显示内容";
+"The HUD is drawn at the game's own render resolution, so it scales with the frame and can look soft. A larger scale (0.3–0.5) is easier to read; the game's own resolution setting has the final say." = "HUD 是按游戏自己的渲染分辨率绘制的，会跟着画面一起被缩放，所以可能发虚。调大缩放（0.3–0.5）会更好读；最终清晰度还是取决于游戏自己的分辨率设置。";
+"Alignment codes: tr/tl/tc/cl/c/cr/bl/bc/br (top/center/bottom × left/center/right). Take effect on the next “Launch with HUD”." = "位置代码：tr/tl/tc/cl/c/cr/bl/bc/br（上/中/下 × 左/中/右）。下次「启动并显示 HUD」时生效。";

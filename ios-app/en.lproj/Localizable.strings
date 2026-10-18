@@ -78,3 +78,9 @@
 "Recommended order: reboot → write → launch the game." = "Recommended order: reboot → write → launch the game.";
 "Launch with HUD (no reboot)" = "Launch with HUD (no reboot)";
 "Launches the app with MTL_HUD_ENABLED=1 through CoreDevice — no reboot and no defaults change. Try this first on iOS; the defaults route below is the fallback." = "Launches the app with MTL_HUD_ENABLED=1 through CoreDevice — no reboot and no defaults change. Try this first on iOS; the defaults route below is the fallback.";
+"HUD options" = "HUD options";
+"HUD scale" = "HUD scale";
+"Alignment" = "Alignment";
+"Layout" = "Layout";
+"The HUD is drawn at the game's own render resolution, so it scales with the frame and can look soft. A larger scale (0.3–0.5) is easier to read; the game's own resolution setting has the final say." = "The HUD is drawn at the game's own render resolution, so it scales with the frame and can look soft. A larger scale (0.3–0.5) is easier to read; the game's own resolution setting has the final say.";
+"Alignment codes: tr/tl/tc/cl/c/cr/bl/bc/br (top/center/bottom × left/center/right). Take effect on the next “Launch with HUD”." = "Alignment codes: tr/tl/tc/cl/c/cr/bl/bc/br (top/center/bottom × left/center/right). Take effect on the next “Launch with HUD”.";

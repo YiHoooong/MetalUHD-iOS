@@ -494,13 +494,18 @@ pub unsafe extern "C" fn al_list_apps(
 pub unsafe extern "C" fn al_launch_app_with_hud(
     pairing_path: *const c_char,
     bundle_id: *const c_char,
+    scale: f64,
+    alignment: *const c_char,
+    elements: *const c_char,
     log_cb: exploit::ALLogCallback,
     ctx: *mut c_void,
     out_pid: *mut u32,
     out_error: *mut *mut c_char,
 ) -> i32 {
     let res = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-        exploit::launch_app_with_hud(pairing_path, bundle_id, log_cb, ctx, out_pid, out_error)
+        exploit::launch_app_with_hud(
+            pairing_path, bundle_id, scale, alignment, elements, log_cb, ctx, out_pid, out_error,
+        )
     }));
     match res {
         Ok(rc) => rc,

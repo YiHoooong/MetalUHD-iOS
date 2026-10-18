@@ -73,6 +73,11 @@ final class HUDViewModel: ObservableObject {
     @Published var selectedBundleID: String? = nil
     @Published var appFilter = ""
 
+    // HUD launch options (MTL_HUD_* environment variables).
+    @Published var hudScale: String = UserDefaults.standard.string(forKey: "metaluhdScale") ?? "0.35"
+    @Published var hudAlignment: String = UserDefaults.standard.string(forKey: "metaluhdAlignment") ?? "tr"
+    @Published var hudElements: String = UserDefaults.standard.string(forKey: "metaluhdElements") ?? "Default"
+
     // Diagnostics.
     @Published var lastWriteAt: Date? = HUDViewModel.storedLastWrite
     @Published var lastAppTarget: String = ""
@@ -333,10 +338,17 @@ final class HUDViewModel: ObservableObject {
         stage = "Launching \(app.name)…"
         append("── Launch with HUD: \(app.name) ──")
         let pairingPath = PairingController.pairingFilePath()
+        let scale = min(max(Double(hudScale) ?? 0.35, 0.1), 1.0)
+        UserDefaults.standard.set(hudScale, forKey: "metaluhdScale")
+        UserDefaults.standard.set(hudAlignment, forKey: "metaluhdAlignment")
+        UserDefaults.standard.set(hudElements, forKey: "metaluhdElements")
 
         Task {
             let result = await Task.detached(priority: .userInitiated) {
-                HUDEngine.launchWithHUD(app, pairingPath: pairingPath)
+                HUDEngine.launchWithHUD(app, pairingPath: pairingPath,
+                                        scale: scale,
+                                        alignment: hudAlignment,
+                                        elements: hudElements)
             }.value
             switch result {
             case let .success(pid):

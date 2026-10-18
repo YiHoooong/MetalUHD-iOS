@@ -33,6 +33,7 @@ struct SettingsView: View {
             ScrollView {
                 VStack(spacing: 16) {
                     pairingCard
+                    hudOptionsCard
                     tunnelCard
                     aboutCard
                 }
@@ -169,6 +170,63 @@ struct SettingsView: View {
             Text("⚠️ Never enter 127.0.0.1: remotepairingdeviced refuses the control channel and drops into a state where every connection fails, until you toggle Developer Mode off and on again.")
                 .font(.caption2)
                 .foregroundColor(.orange)
+        }
+        .padding(12)
+        .background(Color(.secondarySystemBackground))
+        .cornerRadius(12)
+    }
+
+    // MARK: HUD options
+
+    private var hudOptionsCard: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("HUD options")
+                .font(.subheadline.weight(.medium))
+            Text("The HUD is drawn at the game's own render resolution, so it scales with the frame and can look soft. A larger scale (0.3–0.5) is easier to read; the game's own resolution setting has the final say.")
+                .font(.caption)
+                .foregroundColor(.secondary)
+
+            HStack {
+                Text("HUD scale")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                Spacer()
+                TextField("0.35", text: $vm.hudScale)
+                    .textFieldStyle(.roundedBorder)
+                    .keyboardType(.decimalPad)
+                    .frame(width: 90)
+                    .multilineTextAlignment(.trailing)
+            }
+
+            HStack {
+                Text("Alignment")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                Spacer()
+                Picker("Alignment", selection: $vm.hudAlignment) {
+                    ForEach(["tr", "tl", "tc", "cl", "c", "cr", "bl", "bc", "br"], id: \.self) {
+                        Text($0)
+                    }
+                }
+                .pickerStyle(.menu)
+            }
+
+            HStack {
+                Text("Layout")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                Spacer()
+                Picker("Layout", selection: $vm.hudElements) {
+                    ForEach(["Lite", "Default", "Rich", "Full"], id: \.self) {
+                        Text($0)
+                    }
+                }
+                .pickerStyle(.menu)
+            }
+
+            Text("Alignment codes: tr/tl/tc/cl/c/cr/bl/bc/br (top/center/bottom × left/center/right). Take effect on the next “Launch with HUD”.")
+                .font(.caption2)
+                .foregroundColor(.secondary)
         }
         .padding(12)
         .background(Color(.secondarySystemBackground))

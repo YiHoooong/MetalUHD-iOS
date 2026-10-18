@@ -1,8 +1,8 @@
 name: Build unsigned IPA
 
-# Least privilege: the build only reads the repo.
+# The build publishes the IPA as a release asset, so it needs write access.
 permissions:
-  contents: read
+  contents: write
 
 on:
   workflow_dispatch:
@@ -67,13 +67,32 @@ jobs:
       - name: Build unsigned IPA
         run: ./build-ipa.sh Release
 
-      - name: Upload IPA
-        uses: actions/upload-artifact@v4
-        with:
-          name: MetalUHD-unsigned-ipa
-          path: build/MetalUHD.ipa
-          if-no-files-found: error
-          retention-days: 30
-
-      - name: Show artifact size
-        run: ls -lh build/MetalUHD.ipa
+      # GitHub Actions artifacts are always zip files. Publish the IPA as a
+      # release asset instead, so the download is the .ipa itself.
+      - name: Publish IPA as a release asset
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          VERSION="$(awk -F'"' '/MARKETING_VERSION:/ { print $2; exit }' project.yml)"
+          TAG="v${VERSION}"
+          echo "Release tag: ${TAG}"
+          if gh release view "${TAG}" >/dev/null 2>&1; then
+            echo "Release ${TAG} already exists — replacing its IPA asset."
+          else
+            gh release create "${TAG}" --prerelease --title "MetalUHD ${TAG}" \
+              --notes "Unsigned IPA built from ${GITHUB_SHA} (${GITHUB_REF_NAME})."
+          fi
+          gh release upload "${TAG}" build/MetalUHD.ipa --clobber
+          URL="https://github.com/${GITHUB_REPOSITORY}/releases/download/${TAG}/MetalUHD.ipa"
+          ls -lh build/MetalUHD.ipa
+          echo "DIRECT_IPA_URL=${URL}"
+          {
+            echo "### Direct IPA (no zip)"
+            echo ""
+            echo "[MetalUHD.ipa](${URL})"
+            echo ""
+            echo '```sh'
+            echo "gh release download ${TAG} -R ${GITHUB_REPOSITORY} -p MetalUHD.ipa -O MetalUHD.ipa"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"

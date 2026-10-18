@@ -193,9 +193,15 @@ int32_t al_list_apps(const char *pairing_path,
 
 // Launch an installed app with MTL_HUD_ENABLED=1 through CoreDevice's
 // com.apple.coredevice.appservice (RSD tunnel, developer mode required).
+// `scale` is MTL_HUD_SCALE (0.1-1.0, fraction of the drawable width; <= 0
+// leaves it at Apple's default). `alignment` / `elements` map to
+// MTL_HUD_ALIGNMENT / MTL_HUD_ELEMENTS and may be NULL or "".
 // Blocks until the process is spawned. Returns 0 on success with *out_pid set.
 int32_t al_launch_app_with_hud(const char *pairing_path,
                                const char *bundle_id,
+                               double scale,
+                               const char *alignment,
+                               const char *elements,
                                ALLogCallback log_cb,
                                void *ctx,
                                uint32_t *out_pid,

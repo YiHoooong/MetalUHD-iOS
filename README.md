@@ -57,6 +57,21 @@ MetalHudEnabled         # 同上
 
 ---
 
+## HUD 为什么看起来发虚？
+
+Apple 的 [MetalPerformanceHUD 手册](https://keith.github.io/xcode-man-pages/MetalPerformanceHUD.1.html) 写明：
+HUD 是**绘制在 App 自己的 drawable 里**的，`MTL_HUD_SCALE` 是「drawable 宽度的比例」（0.1–1.0，默认 0.2，且小于 300px 时按 300px 画）。
+所以：
+
+- 王者荣耀这类游戏会开**动态分辨率/渲染缩放**，HUD 跟着整帧一起被放大 → 看起来糊；
+- **没有**"提高 HUD 分辨率"的开关，这是 Apple 的 HUD 设计；
+- 能改善的只有：把 `MTL_HUD_SCALE` 调大（0.3–0.5 更好读）、把游戏自己的画面分辨率/画质调高、
+  用 `MTL_HUD_ALIGNMENT` 挪到更显眼的位置、用 `MTL_HUD_ELEMENTS` 换更完整的布局。
+
+「设置」页的 **HUD 选项** 就是干这个的，改完重新点「启动并显示 HUD」生效。
+
+---
+
 ## 功能
 
 | 功能 | 说明 |
@@ -65,6 +80,7 @@ MetalHudEnabled         # 同上
 | **启动并显示 HUD（免重启）** | 通过 CoreDevice 的 `com.apple.coredevice.appservice`，用 `MTL_HUD_ENABLED=1` 直接启动目标 App（等价于 `devicectl process launch --env`），不重启、不改 defaults。**iOS 上优先试这个** |
 | **按 App 开启** | 列出已安装 App → 选中游戏 → 把三个键写进它的 `Library/Preferences/<bundle-id>.plist`（保留该 App 原有 defaults） |
 | **全局域（实验）** | 读写 `.GlobalPreferences.plist`（经典 tweak 路线，对 App Store App 不一定有效） |
+| **HUD 选项** | 在「设置」页调 `MTL_HUD_SCALE`（缩放）、`MTL_HUD_ALIGNMENT`（位置）、`MTL_HUD_ELEMENTS`（显示内容），下次启动生效 |
 | **诊断** | 设备型号/iOS 版本、上次写入时间、**写后是否重启过**、cfprefsd 当前值 |
 | **cfprefsd 重载探测** | 绕过 cfprefsd 改本 App 自己的 plist 再读回来，判断它是否感知外部修改——决定"强退重开"够不够，还是必须重启 |
 | **一键重启** | 通过 Diagnostics Relay 重启设备（cfprefsd 只在开机时重新读文件） |
@@ -140,7 +156,17 @@ Rust core 要交叉编译到 iOS，所以构建需要 **macOS + Xcode 16+**。�
 
 1. 把仓库推到 GitHub；
 2. Actions → **Build unsigned IPA** → Run workflow（或改 `rust-core/`、`ios-app/`、`project.yml`、构建脚本时自动触发）；
-3. 下载 `MetalUHD-unsigned-ipa` 构件。
+3. CI 会把 **IPA 作为 GitHub Release 资产**发布（不再套 zip）。直接下载：
+
+```sh
+# 直接拿到 .ipa 文件（私有仓库需要已登录 gh）
+gh release download v0.5.0 -R YiHoooong/MetalUHD-iOS -p MetalUHD.ipa -O MetalUHD.ipa
+
+# 或者浏览器打开（需登录 GitHub）：
+# https://github.com/YiHoooong/MetalUHD-iOS/releases/download/v0.5.0/MetalUHD.ipa
+```
+
+> GitHub Actions 的 artifact 永远是 zip，所以不再用 artifact；Release 资产就是原始 `.ipa`。
 
 Mac 上：
 

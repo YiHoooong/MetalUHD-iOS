@@ -92,13 +92,13 @@ CI 会把 **`MetalUHD.ipa` 作为 GitHub Release 资产**发布（不是 zip art
 
 ```sh
 # 直接下载 .ipa
-gh release download v0.8.4 -R YiHoooong/MetalUHD-iOS -p MetalUHD.ipa -O MetalUHD.ipa
+gh release download v0.8.5 -R YiHoooong/MetalUHD-iOS -p MetalUHD.ipa -O MetalUHD.ipa
 ```
 
 浏览器（私有仓库需登录）：
 
 ```
-https://github.com/YiHoooong/MetalUHD-iOS/releases/download/v0.8.4/MetalUHD.ipa
+https://github.com/YiHoooong/MetalUHD-iOS/releases/download/v0.8.5/MetalUHD.ipa
 ```
 
 Mac 上手动构建：
@@ -162,7 +162,8 @@ HUD 绘制在 **App 自己的 drawable** 里，`MTL_HUD_SCALE` 是 drawable 宽�
 - [idevice](https://github.com/jkcoxson/idevice) —— RSD / AFC / CoreDevice / InstallationProxy
 - [iOS-MetalHUD-Launcher](https://github.com/wurezhwe/iOS-MetalHUD-Launcher) —— `MTL_HUD_ENABLED` 注入路线的参考
 
-图标由 [`tools/make-icon.py`](tools/make-icon.py)（Pillow）绘制：青→绿的仪表环 + 玻璃播放三角 + HUD 角标，
-`python3 tools/make-icon.py` 可重新生成全部尺寸。
+图标素材在 [`tools/icon-source.png`](tools/icon-source.png)（MetalHUD 主体，已去白底）。
+[`tools/make-icon.py`](tools/make-icon.py) 会裁到内容边界、合成到黑色底并输出**无 alpha**的 1024/180/120/152/167 五个尺寸；
+换图后 `python3 tools/make-icon.py` 重新生成即可。
 
 MIT，见 [LICENSE](LICENSE)（继承上游，版权归原作者）。

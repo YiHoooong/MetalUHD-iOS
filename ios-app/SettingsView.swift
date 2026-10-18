@@ -19,7 +19,7 @@ struct SettingsView: View {
         return types
     }()
 
-    private struct AlignmentChoice: Identifiable {
+    struct AlignmentChoice: Identifiable {
         let code: String
         let label: String
         var id: String { code }
